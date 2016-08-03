@@ -32,6 +32,13 @@ class Command(BaseCommand):
             type=str,
             help='The directory path to scan. If not given, it will scan the files that are given to the standar input.'  # noqa
         )
+        parser.add_argument(
+            '--remove-missing',
+            action='store_true',
+            dest='remove_missing',
+            default=False,
+            help='Removes MediaFiles from the DB associated with files that no longer exists in the selected directory.',  # noqa
+        )
 
     def handle(self, *args, **options):
         ignore_directories = Directory.objects.filter(ignore=True)
@@ -83,3 +90,11 @@ class Command(BaseCommand):
                         mf.save()
                     print f
                     break
+
+        if options.get('remove_missing'):
+            mediafiles = MediaFile.objects.all()
+            if directory:
+                mediafiles = mediafiles.filter(directory__startswith=directory)
+            for mf in mediafiles:
+                if not os.path.exists(mf.full_path):
+                    mf.delete()

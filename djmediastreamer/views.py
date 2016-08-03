@@ -247,6 +247,9 @@ class CollectDirectoryView(LoginRequiredMixin, View):
         if not can_access_directory(request.user, d):
             return HttpResponseForbidden()
         management.call_command(
-            'collect_media', with_mediainfo=True, directory=d.path
+            'collect_media',
+            with_mediainfo=True,
+            directory=d.path,
+            remove_missing=True
         )
         return HttpResponseRedirect(reverse('directories'))
