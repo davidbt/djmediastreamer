@@ -24,7 +24,7 @@ class Command(BaseCommand):
             action='store_true',
             dest='with_md5',
             default=False,
-            help='Collect MD5sum.',
+            help='Collect MD5sum (not implemented yet).',
         )
         parser.add_argument(
             '--directory',

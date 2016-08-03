@@ -2,6 +2,8 @@
 
 {% block content %}
   {% for d in directories %}
-    <a href="{{ d.url }}">{{d.path}}</a> <br>
+    <a href="{{ d.url }}">{{d.path}}</a>
+    <a href="{{ d.collect_url }}">Collect</a>
+    <br>
   {% endfor %}
 {% endblock content %}

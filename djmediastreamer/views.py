@@ -4,6 +4,7 @@ import subprocess
 from django.db.models import Q
 
 from sendfile import sendfile
+from django.core import management
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView, View
 from django.shortcuts import render, get_object_or_404
@@ -60,6 +61,7 @@ class DirectoriesView(LoginRequiredMixin, TemplateView):
         directories = []
         for d in ds:
             d.url = reverse('mediafiles', args=(d.id,))
+            d.collect_url = reverse('collect', args=(d.id,))
             directories.append(d)
         context['directories'] = directories
         return render(request, self.template_name, context)
@@ -229,3 +231,14 @@ class DownloadMediaFileView(LoginRequiredMixin, View):
         if not can_access_mediafile(request.user, mf):
             return HttpResponseForbidden()
         return sendfile(request, mf.full_path, attachment=True)
+
+
+class CollectDirectoryView(LoginRequiredMixin, View):
+    def get(self, request, id, *args, **kwargs):
+        d = get_object_or_404(Directory, id=id)
+        if not can_access_directory(request.user, d):
+            return HttpResponseForbidden()
+        management.call_command(
+            'collect_media', with_mediainfo=True, directory=d.path
+        )
+        return HttpResponseRedirect(reverse('directories'))
