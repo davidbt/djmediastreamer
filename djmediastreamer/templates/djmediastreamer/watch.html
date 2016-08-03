@@ -1,0 +1,20 @@
+{% extends 'djmediastreamer/base.html' %}
+
+{% block content %}
+  {{mediafile.file_name}}<br><br>
+  <video id="video" controls autoplay>
+    <source src="{{mediafile.url}}" type="{{mediafile.video_type}}">
+  </video>
+  <br><br>
+
+  <form action="." method="get">
+    <input id='goto' name="goto" value='00:00:00'>
+    <br><br>
+    {% for s in subtitles %}
+      <input type="checkbox" name="sub_{{forloop.counter0}}" value="{{s}}">{{s}}<br>
+    {% endfor %}
+    <br>
+    <input type="submit" value="Reload">
+  </form>
+
+{% endblock content %}

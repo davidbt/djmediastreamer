@@ -1,0 +1,7 @@
+{% extends 'djmediastreamer/base.html' %}
+
+{% block content %}
+  {% for d in directories %}
+    <a href="{{ d.url }}">{{d.path}}</a> <br>
+  {% endfor %}
+{% endblock content %}

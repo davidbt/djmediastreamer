@@ -1,0 +1,16 @@
+<html>
+<body>
+  <form action="" method="post" id="login-form">{% csrf_token %}
+    <div class="form-row">
+      <label class="required" for="id_username">Username:</label> <input id="id_username" maxlength="254" name="username" type="text" />
+    </div>
+    <div class="form-row">
+      <label class="required" for="id_password">Password:</label> <input id="id_password" name="password" type="password" />
+      <input type="hidden" name="next" value="/admin/" />
+    </div>
+    <div class="submit-row">
+      <label>&nbsp;</label><input type="submit" value="Log in" />
+    </div>
+  </form>
+</body>
+</html>

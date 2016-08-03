@@ -1,0 +1,42 @@
+{% extends 'djmediastreamer/base.html' %}
+
+{% block content %}
+  {{ directory.path}}
+  <br><br>
+  <table style="width:100%">
+    <tr>
+      <th>Watch</th>
+      <th>Download</th>
+      <th>Directory</th>
+      <th>Codec</th>
+      <th>Resolution</th>
+      <th>Duration</th>
+      <th>Size</th>
+    </tr>
+    {% for mf in mediafiles %}
+    <tr>
+      <td>
+        <a href="{{ mf.watch_url }}">Watch</a>
+      </td>
+      <td>
+        <a href="{{ mf.download_url }}">{{mf.file_name}}</a>
+      </td>
+      <td>
+        {{mf.subdirectory}}
+      </td>
+      <td>
+        {{mf.v_codec}}
+      </td>
+      <td>
+        {{mf.resolution}}
+      </td>
+      <td>
+        {{mf.str_duration}}
+      </td>
+      <td>
+        {{mf.str_size}}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endblock content %}
