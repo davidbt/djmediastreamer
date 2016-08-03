@@ -6,8 +6,8 @@ import sys
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from mymedia.utils import MediaInfo
-from mymedia.models import MediaFile, Directory
+from djmediastreamer.utils import MediaInfo
+from djmediastreamer.models import MediaFile, Directory
 
 
 class Command(BaseCommand):
@@ -26,12 +26,29 @@ class Command(BaseCommand):
             default=False,
             help='Collect MD5sum.',
         )
+        parser.add_argument(
+            '--directory',
+            required=False,
+            type=str,
+            help='The directory path to scan. If not given, it will scan the files that are given to the standar input.'  # noqa
+        )
 
     def handle(self, *args, **options):
         ignore_directories = Directory.objects.filter(ignore=True)
-        for line in sys.stdin:
+        lines = sys.stdin
+        directory = options.get('directory')
+        if directory:
+            lines = []
+            walk = os.walk(directory)
+            for t in walk:
+                d = t[0]
+                for f in t[2]:
+                    #  TODO: just add the video files.
+                    lines.append(os.path.join(t[0], f))
+
+        for line in lines:
             ignore = False
-            f = line[:-1]
+            f = line.strip()
             l = f.lower()
             for d in ignore_directories:
                 if f.startswith(str(d.path)):
@@ -65,3 +82,4 @@ class Command(BaseCommand):
                         found = False
                         mf.save()
                     print f
+                    break
