@@ -122,6 +122,7 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         selected_subs, url_append = get_subtitles_from_request(request)
         mf.url += url_append
         mf.video_type = 'video/webm'
+
         if mf.extension == 'mp4' and mf.v_codec == 'AVC':
             mf.video_type = 'video/mp4'
         context['mediafile'] = mf
@@ -166,11 +167,21 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 r = f.read(1024*8)
                 yield r
 
-    def transcode_process(self, full_path, subtitles=None, goto=None):
-        cmd = [
-            'ffmpeg', '-i', full_path, '-codec:v', 'vp8', '-b:v', '0',
-            '-crf', '24', '-threads', '8', '-speed', '4'
-        ]
+    def transcode_process(
+        self, full_path, subtitles=None, goto=None, output_format='webm'
+    ):
+        if output_format == 'webm':
+            cmd = [
+                'ffmpeg', '-i', full_path, '-codec:v', 'vp8', '-b:v', '0',
+                '-crf', '24', '-threads', '8', '-speed', '4'
+            ]
+            extend = ['-f', 'webm', '-']
+        elif output_format == 'matroska':
+            cmd = [
+                'ffmpeg', '-i', full_path,
+                '-crf', '20'
+            ]
+            extend = ['-f', 'matroska', '-']
         if goto:
             cmd.extend(['-ss', goto])
         if subtitles:
@@ -186,12 +197,14 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 cmd.extend(['-vf', 'subtitles={s0},ass={s1}'.format(
                     s0=subtitles[0], s1=subs_out)]
                 )
-        cmd.extend(['-f', 'webm', '-'])
+        cmd.extend(extend)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         return p
 
-    def stream_video(self, full_path, subtitles=None, goto=None):
-        p = self.transcode_process(full_path, subtitles, goto)
+    def stream_video(
+        self, full_path, subtitles=None, goto=None, output_format='webm'
+    ):
+        p = self.transcode_process(full_path, subtitles, goto, output_format)
         p.poll()
         while p.returncode is None:
             r = p.stdout.read(512)
@@ -226,8 +239,14 @@ class GethMediaFileView(LoginRequiredMixin, View):
         ):
             return sendfile(request, mf.full_path)
         else:
-            return StreamingHttpResponse(self.stream_video(
-                mf.full_path, subtitles, goto), content_type='video/webm')
+            output_format = 'webm'
+            if 'Chrome' in request.META['HTTP_USER_AGENT']:
+                output_format = 'matroska'
+            return StreamingHttpResponse(
+                self.stream_video(
+                    mf.full_path, subtitles, goto, output_format),
+                content_type='video/webm'
+            )
 
 
 class DownloadMediaFileView(LoginRequiredMixin, View):
