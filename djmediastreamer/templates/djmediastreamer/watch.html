@@ -9,10 +9,10 @@
 
   <form action="." method="get">
     <label>Jump to</label>
-    <input id='goto' name="goto" value='00:00:00'>
+    <input id='goto' name="goto" value="{{goto}}">
     <br><br>
     {% for s in subtitles %}
-      <input type="checkbox" name="sub_{{forloop.counter0}}" value="{{s}}">{{s}}<br>
+      <input type="checkbox" name="sub_{{forloop.counter0}}" value="{{s.file}}" {{s.checked}}>{{s.file}}<br>
     {% endfor %}
     <br>
     <input type="submit" value="Reload">

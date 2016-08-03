@@ -119,14 +119,22 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         if goto:
             mf.url += '?goto={g}'.format(g=goto)
 
-        _, url_append = get_subtitles_from_request(request)
+        selected_subs, url_append = get_subtitles_from_request(request)
         mf.url += url_append
         mf.video_type = 'video/webm'
         if mf.extension == 'mp4' and mf.v_codec == 'AVC':
             mf.video_type = 'video/mp4'
         context['mediafile'] = mf
 
-        context['subtitles'] = self.lookfor_subtitles(mf)
+        subtitles_avail = self.lookfor_subtitles(mf)
+        subtitles = []
+        for s in subtitles_avail:
+            if s in selected_subs:
+                subtitles.append({'file': s, 'checked': 'checked'})
+            else:
+                subtitles.append({'file': s, 'checked': ''})
+        context['subtitles'] = subtitles
+        context['goto'] = goto or '00:00:00'
         return render(request, self.template_name, context)
 
 

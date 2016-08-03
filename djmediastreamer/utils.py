@@ -35,12 +35,10 @@ def get_subtitles_from_request(request):
     subtitles = []
     i = 0
     url = ''
-    while request.GET.get('sub_{i}'.format(i=i)):
-        k = 'sub_{i}'.format(i=i)
-        s = request.GET[k]
-        subtitles.append(s)
-        url += '&{k}={s}'.format(k=k, s=s)
-        i += 1
+    for k, s in request.GET.items():
+        if k.startswith('sub_'):
+            subtitles.append(s)
+            url += '&{k}={s}'.format(k=k, s=s)
     return subtitles, url
 
 
