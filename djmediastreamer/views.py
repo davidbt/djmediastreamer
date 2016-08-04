@@ -81,8 +81,6 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
         ).order_by('file_name')
         mediafiles = []
         for mf in mfs:
-            mf.watch_url = reverse('watch_mediafile', args=(mf.id,))
-            mf.download_url = reverse('download_mediafile', args=(mf.id,))
             mf.subdirectory = mf.directory[len(d.path) + 1:]
             mediafiles.append(mf)
         context['mediafiles'] = mfs

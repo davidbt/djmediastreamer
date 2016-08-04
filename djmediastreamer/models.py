@@ -37,6 +37,14 @@ class MediaFile(models.Model):
     def str_size(self):
         return '{0:0.1f} MB'.format(float(self.size) / 2 ** 20)
 
+    @property
+    def watch_url(self):
+        return reverse('watch_mediafile', args=(self.id,))
+
+    @property
+    def download_url(self):
+        return reverse('download_mediafile', args=(self.id,))
+
     def __unicode__(self):
         return self.file_name
 
