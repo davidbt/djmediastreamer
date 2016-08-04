@@ -12,7 +12,7 @@ sudo -u postgres createuser djmediastreamer
 sudo -u postgres createdb -O djmediastreamer djmediastreamer
 ```
 
-configure postgresql security (pg_hba.conf). Something like this:
+Configure postgresql security (pg\_hba.conf). Something like this:
 ```host    djmediastreamer             djmediastreamer             127.0.0.1/32            trust
 ```
 
