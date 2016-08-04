@@ -12,36 +12,43 @@ sudo -u postgres createuser djmediastreamer
 sudo -u postgres createdb -O djmediastreamer djmediastreamer
 ```
 
-Configure postgresql security (pg\_hba.conf). Something like this:
-```host    djmediastreamer             djmediastreamer             127.0.0.1/32            trust
+Configure postgresql security (pg_hba.conf). Something like this:
+```
+host    djmediastreamer             djmediastreamer             127.0.0.1/32            trust
 ```
 
 Create the python environment.
-```cd ~
+```
+cd ~
 mkdir djmediastreamer
 virtualenv env
 source env/bin/activate
 ```
 
 Clone the repo.
-```git clone https://github.com/davidbt/djmediastreamer.git
+```
+git clone https://github.com/davidbt/djmediastreamer.git
 ```
 
 Install the requirements.
-```cd djmediastreamer
+```
+cd djmediastreamer
 pip install -r deploy/requirements.txt
 ```
 
 Run the migrations.
-```./manage.py migrate
+```
+./manage.py migrate
 ```
 
 Create a superuser
-```./manage.py createsuperuser
+```
+./manage.py createsuperuser
 ```
 
 Run the server
-```./manage.py runserver
+```
+./manage.py runserver
 ```
 
 Go to the [admin page] (http://localhost:8000/admin/)
@@ -50,4 +57,3 @@ Login, click on directories and the on "ADD DIRECTORY". In path enter the path w
 Go to the [home page] (http://localhost:8000/). Threre should be a link to your directory but before you can watch you videos you should collect them clicking on "Collect". It should take a few seconds.
 
 Now your are ready to click on your directory, it should show you all the videos in your directory with links to stream or download them.
-
