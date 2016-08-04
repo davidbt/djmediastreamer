@@ -4,6 +4,7 @@ import time
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.contrib.postgres.fields import JSONField
 
 
@@ -50,6 +51,14 @@ class Directory(models.Model):
     allowed_users = models.ManyToManyField(
         User, blank=True, related_name='directories'
     )
+
+    @property
+    def url(self):
+        return reverse('mediafiles', args=(self.id,))
+
+    @property
+    def collect_url(self):
+        return reverse('collect', args=(self.id,))
 
     def __unicode__(self):
         return self.path

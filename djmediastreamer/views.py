@@ -60,8 +60,6 @@ class DirectoriesView(LoginRequiredMixin, TemplateView):
         ds = get_allowed_directories(request.user).order_by('path')
         directories = []
         for d in ds:
-            d.url = reverse('mediafiles', args=(d.id,))
-            d.collect_url = reverse('collect', args=(d.id,))
             directories.append(d)
         context['directories'] = directories
         return render(request, self.template_name, context)
@@ -136,6 +134,11 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
                 subtitles.append({'file': s, 'checked': ''})
         context['subtitles'] = subtitles
         context['goto'] = goto or '00:00:00'
+        for d in get_allowed_directories(request.user):
+            if mf.directory.startswith(d.path):
+                directory = d
+                break
+        context['directory'] = directory
         return render(request, self.template_name, context)
 
 
