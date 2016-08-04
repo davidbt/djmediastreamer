@@ -6,8 +6,15 @@
   <link href='{% static "node_modules/bootstrap/dist/css/bootstrap.min.css" %}' rel="stylesheet">
 </head>
 <body>
-  <a href={% url 'logout' %} >logout</a>
-  <br><br>
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-header">
+      <a class="navbar-brand" href='{% url "directories" %}'>djmediastreamer</a>
+    </div>
+    <div class="navbar-right">
+      <a class="navbar-brand" href='logout'>Logout</a>
+    </div>
+  </nav>
+  <br><br><br><br>
   {% block content %}
   {% endblock %}
 </body>
