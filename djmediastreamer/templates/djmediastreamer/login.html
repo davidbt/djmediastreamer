@@ -1,16 +1,27 @@
+{% load static %}
 <html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src='{% static "node_modules/bootstrap/dist/js/bootstrap.min.js" %}'></script>
+    <link href='{% static "node_modules/bootstrap/dist/css/bootstrap.min.css" %}' rel="stylesheet">
+    <link href='{% static "djmediastreamer/css/login.css" %}' rel="stylesheet">
+  </head>
 <body>
-  <form action="" method="post" id="login-form">{% csrf_token %}
-    <div class="form-row">
-      <label class="required" for="id_username">Username:</label> <input id="id_username" maxlength="254" name="username" type="text" />
-    </div>
-    <div class="form-row">
-      <label class="required" for="id_password">Password:</label> <input id="id_password" name="password" type="password" />
-      <input type="hidden" name="next" value="/admin/" />
-    </div>
-    <div class="submit-row">
-      <label>&nbsp;</label><input type="submit" value="Log in" />
-    </div>
-  </form>
+  <div class="container login-div">
+    <h2>Please login</h2>
+    <br>
+    <form action="" method="post" id="login-form">{% csrf_token %}
+      <div class="form-row">
+        <input id="id_username" maxlength="254" name="username" class="form-control" type="text" placeholder="Username"/>
+      </div>
+      <div class="form-row">
+        <input id="id_password" name="password" class="form-control" type="password" placeholder="Password" />
+        <input type="hidden" name="next" value="/" />
+      </div>
+      <div class="submit-row">
+        <label>&nbsp;</label><input class="btn btn-lg btn-primary btn-block" type="submit" value="Login" />
+      </div>
+    </form>
+</div>
 </body>
 </html>
