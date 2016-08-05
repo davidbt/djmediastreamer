@@ -3,7 +3,7 @@ A Django project that allows you to catalog and stream your videos (using FFmpeg
 
 
 ## Installation
-install postgresql, ffmpeg and mediainfo.
+install postgresql, node, ffmpeg and mediainfo.
 
 
 Create djmediastreamer user and database.
@@ -30,7 +30,7 @@ Clone the repo.
 git clone https://github.com/davidbt/djmediastreamer.git
 ```
 
-Install the requirements.
+Install python requirements.
 ```
 cd djmediastreamer
 pip install -r deploy/requirements.txt
@@ -44,6 +44,13 @@ Run the migrations.
 Create a superuser
 ```
 ./manage.py createsuperuser
+```
+
+Install js requirements.
+```
+cd djmediastreamer/static/
+npm install
+cd ../..
 ```
 
 Run the server
