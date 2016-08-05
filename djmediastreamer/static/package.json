@@ -2,6 +2,7 @@
     "name": "djmediastreamer",
     "version": "0.0.1",
     "dependencies": {
-        "bootstrap": "3"
+        "bootstrap": "3",
+        "datatables": ">=1.10.12"
     }
 }

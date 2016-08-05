@@ -1,42 +1,53 @@
 {% extends 'djmediastreamer/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+  <script src='{% static "node_modules/datatables/media/js/jquery.dataTables.min.js" %}'></script>
+  <script src='{% static "djmediastreamer/js/mediafiles.js" %}'></script>
+  <link href='{% static "node_modules/datatables/media/css/jquery.dataTables.min.css" %}' rel="stylesheet">
+{% endblock extra_head %}
 
 {% block content %}
   {{ directory.path}}
   <br><br>
-  <table style="width:100%">
-    <tr>
-      <th>Watch</th>
-      <th>Download</th>
-      <th>Directory</th>
-      <th>Codec</th>
-      <th>Resolution</th>
-      <th>Duration</th>
-      <th>Size</th>
-    </tr>
-    {% for mf in mediafiles %}
-    <tr>
-      <td>
-        <a href="{{ mf.watch_url }}">Watch</a>
-      </td>
-      <td>
-        <a href="{{ mf.download_url }}">{{mf.file_name}}</a>
-      </td>
-      <td>
-        {{mf.subdirectory}}
-      </td>
-      <td>
-        {{mf.v_codec}}
-      </td>
-      <td>
-        {{mf.resolution}}
-      </td>
-      <td>
-        {{mf.str_duration}}
-      </td>
-      <td>
-        {{mf.str_size}}
-      </td>
-    </tr>
-    {% endfor %}
+  <table id="mediafiles" class="display" width="100%" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Watch</th>
+        <th>Download</th>
+        <th>Directory</th>
+        <th>Codec</th>
+        <th>Resolution</th>
+        <th>Duration</th>
+        <th>Size</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for mf in mediafiles %}
+      <tr>
+        <td>
+          <a href="{{ mf.watch_url }}">Watch</a>
+        </td>
+        <td>
+          <a href="{{ mf.download_url }}">{{mf.file_name}}</a>
+        </td>
+        <td>
+          {{mf.subdirectory}}
+        </td>
+        <td>
+          {{mf.v_codec}}
+        </td>
+        <td>
+          {{mf.resolution}}
+        </td>
+        <td>
+          {{mf.str_duration}}
+        </td>
+        <td>
+          {{mf.str_size}}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 {% endblock content %}
