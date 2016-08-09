@@ -70,3 +70,11 @@ class Directory(models.Model):
 
     def __unicode__(self):
         return self.path
+
+
+class MediaFileLog(models.Model):
+    mediafile = models.ForeignKey(MediaFile)
+    user = models.ForeignKey(User)
+    dtm = models.DateTimeField(auto_now=True)
+    request = models.TextField()
+    request_params = JSONField(null=True, blank=True)

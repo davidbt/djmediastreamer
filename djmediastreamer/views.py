@@ -16,7 +16,7 @@ from django.http import (
 )
 
 
-from .models import MediaFile, Directory
+from .models import MediaFile, Directory, MediaFileLog
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
     can_access_mediafile, get_subtitles_from_request
@@ -138,6 +138,13 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
                 directory = d
                 break
         context['directory'] = directory
+
+        mfl = MediaFileLog.objects.create(
+            mediafile=mf,
+            user=request.user,
+            request=request.path,
+            request_params=request.GET
+        )
         return render(request, self.template_name, context)
 
 
@@ -247,6 +254,12 @@ class DownloadMediaFileView(LoginRequiredMixin, View):
         mf = get_object_or_404(MediaFile, id=id)
         if not can_access_mediafile(request.user, mf):
             return HttpResponseForbidden()
+        mfl = MediaFileLog.objects.create(
+            mediafile=mf,
+            user=request.user,
+            request=request.path,
+            request_params=request.GET
+        )
         return sendfile(request, mf.full_path, attachment=True)
 
 
