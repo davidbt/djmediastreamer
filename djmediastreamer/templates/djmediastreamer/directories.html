@@ -1,9 +1,25 @@
 {% extends 'djmediastreamer/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+  <script src='{% static "node_modules/datatables/media/js/jquery.dataTables.min.js" %}'></script>
+  <script src='{% static "djmediastreamer/js/directories.js" %}'></script>
+  <link href='{% static "node_modules/datatables/media/css/jquery.dataTables.min.css" %}' rel="stylesheet">
+{% endblock extra_head %}
 
 {% block content %}
-  {% for d in directories %}
-    <a href="{{ d.url }}">{{d.path}}</a>
-    <a href="{{ d.collect_url }}">Collect</a>
-    <br>
-  {% endfor %}
+  <table id="directories" class="display">
+    <thead>
+      <th>Path</th>
+      <th></th>
+    </thead>
+    <tbody>
+      {% for d in directories %}
+      <tr>
+        <td><a href="{{ d.url }}">{{d.path}}</a></td>
+        <td><a href="{{ d.collect_url }}">Collect</a></td>
+      </tr>
+      {% endfor %}
+</tbody>
+</table>
 {% endblock content %}
