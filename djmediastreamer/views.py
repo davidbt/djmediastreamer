@@ -11,7 +11,8 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login, logout, authenticate
 from django.http import (
-    StreamingHttpResponse, HttpResponseRedirect, HttpResponseForbidden
+    StreamingHttpResponse, HttpResponseRedirect, HttpResponseForbidden,
+    FileResponse
 )
 
 
@@ -202,18 +203,6 @@ class GethMediaFileView(LoginRequiredMixin, View):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         return p
 
-    def stream_video(
-        self, full_path, subtitles=None, goto=None, output_format='webm'
-    ):
-        p = self.transcode_process(full_path, subtitles, goto, output_format)
-        p.poll()
-        while p.returncode is None:
-            r = p.stdout.read(512)
-            p.poll()
-            yield r
-        r = p.stdout.read()
-        yield r
-
     def get_subtitles_files(self, mediafile):
         # TODO: return all subtitles, not only one
         if mediafile.extension == 'mkv':
@@ -243,9 +232,9 @@ class GethMediaFileView(LoginRequiredMixin, View):
             output_format = 'webm'
             if 'Chrome' in request.META['HTTP_USER_AGENT']:
                 output_format = 'matroska'
-            return StreamingHttpResponse(
-                self.stream_video(
-                    mf.full_path, subtitles, goto, output_format),
+            return FileResponse(
+                self.transcode_process(
+                    mf.full_path, subtitles, goto, output_format).stdout,
                 content_type='video/webm'
             )
 
