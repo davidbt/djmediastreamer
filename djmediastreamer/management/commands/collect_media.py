@@ -94,6 +94,9 @@ class Command(BaseCommand):
         if options.get('remove_missing'):
             mediafiles = MediaFile.objects.all()
             if directory:
+                if not os.path.exists(directory):
+                    print 'Skiping because the directory does not exists.'
+                    return
                 mediafiles = mediafiles.filter(directory__startswith=directory)
             for mf in mediafiles:
                 if not os.path.exists(mf.full_path):
