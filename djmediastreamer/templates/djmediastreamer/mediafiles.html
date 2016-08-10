@@ -27,6 +27,10 @@
       <tr>
         <td>
           <a href="{{ mf.watch_url }}">Watch</a>
+          {% if mf.last_position %}
+          /
+          <a href="{{ mf.watch_url }}?goto={{mf.last_position}}">Continue watching ({{mf.last_position}})</a>
+          {% endif%}
         </td>
         <td>
           <a href="{{ mf.download_url }}">{{mf.file_name}}</a>

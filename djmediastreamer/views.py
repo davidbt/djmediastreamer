@@ -1,4 +1,5 @@
 import os
+import time
 import subprocess
 
 from sendfile import sendfile
@@ -83,6 +84,18 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
         for mf in mfs:
             mf.subdirectory = mf.directory[len(d.path) + 1:]
             mediafiles.append(mf)
+            mfls = MediaFileLog.objects.filter(
+                mediafile=mf, user=request.user, last_position__isnull=False
+            ).order_by('-dtm')
+            if mfls:
+                mlf = mfls.first()
+                time_zero = time.mktime(time.strptime('00:00:00', '%H:%M:%S'))
+                initial = time.mktime(
+                    time.strptime(
+                        mlf.request_params.get('goto', '00:00:00'), '%H:%M:%S')
+                )
+                new_initial = initial - time_zero + mlf.last_position
+                mf.last_position = MediaFile(duration=new_initial).str_duration
         context['mediafiles'] = mfs
         context['directory'] = d
         return render(request, self.template_name, context)
