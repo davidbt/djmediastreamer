@@ -41,11 +41,13 @@ class LoginView(TemplateView):
                 login(request, user)
                 return HttpResponseRedirect(request.GET.get('next', '/'))
             else:
-                pass
-                # TODO: Return a 'disabled account' error message.
+                return render(
+                    request, self.template_name, {'error': 'Disabled account'}
+                )
         else:
-            pass
-            # TODO: Return an 'invalid login' error message.
+            return render(
+                request, self.template_name, {'error': 'Invalid login'}
+            )
 
 
 class DirectoriesView(LoginRequiredMixin, TemplateView):

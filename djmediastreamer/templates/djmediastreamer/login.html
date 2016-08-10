@@ -18,6 +18,11 @@
         <input id="id_password" name="password" class="form-control" type="password" placeholder="Password" />
         <input type="hidden" name="next" value="/" />
       </div>
+      <div class="control-group error">
+        {% if error %}
+        <label class="control-label" for="inputError">{{error}}</label>
+        {% endif %}
+      </div>
       <div class="submit-row">
         <label>&nbsp;</label><input class="btn btn-lg btn-primary btn-block" type="submit" value="Login" />
       </div>
