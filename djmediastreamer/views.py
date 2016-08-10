@@ -1,8 +1,6 @@
 import os
 import subprocess
 
-from django.db.models import Q
-
 from sendfile import sendfile
 from django.core import management
 from django.core.urlresolvers import reverse
@@ -11,8 +9,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login, logout, authenticate
 from django.http import (
-    StreamingHttpResponse, HttpResponseRedirect, HttpResponseForbidden,
-    FileResponse
+    HttpResponseRedirect, HttpResponseForbidden, FileResponse, JsonResponse
 )
 
 
@@ -139,13 +136,27 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
                 break
         context['directory'] = directory
 
-        mfl = MediaFileLog.objects.create(
+        MediaFileLog.objects.create(
             mediafile=mf,
             user=request.user,
             request=request.path,
             request_params=request.GET
         )
         return render(request, self.template_name, context)
+
+    def put(self, request, id, *args, **kwargs):
+        mf = get_object_or_404(MediaFile, id=id)
+        if not can_access_mediafile(request.user, mf):
+            return HttpResponseForbidden()
+        mfls = MediaFileLog.objects.filter(
+            mediafile=mf, user=request.user
+        ).order_by('-dtm')
+        mfl = mfls.first()
+        split = request.body.split('=')
+        position = float(split[1])
+        mfl.last_position = int(position)
+        mfl.save()
+        return JsonResponse({})
 
 
 class GethMediaFileView(LoginRequiredMixin, View):
@@ -200,8 +211,7 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 cmd.extend(['-vf', 'subtitles={s}'.format(s=subtitles[0])])
             else:
                 subs_out = '.'.join(full_path.split('.')[:-1]) + '__.ass'
-                subtitles_cmd = 'ffmpeg -i "{s1}" -f ass - | ./manage.py move_subs_to_top > "{out}"' \
-                    .format(s1=subtitles[1], out=subs_out)
+                subtitles_cmd = 'ffmpeg -i "{s1}" -f ass - | ./manage.py move_subs_to_top > "{out}"'.format(s1=subtitles[1], out=subs_out)  # noqa
                 os.system(subtitles_cmd)
                 cmd.extend(['-vf', 'subtitles={s0},ass={s1}'.format(
                     s0=subtitles[0], s1=subs_out)]
@@ -254,7 +264,7 @@ class DownloadMediaFileView(LoginRequiredMixin, View):
         mf = get_object_or_404(MediaFile, id=id)
         if not can_access_mediafile(request.user, mf):
             return HttpResponseForbidden()
-        mfl = MediaFileLog.objects.create(
+        MediaFileLog.objects.create(
             mediafile=mf,
             user=request.user,
             request=request.path,

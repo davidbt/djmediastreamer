@@ -78,3 +78,5 @@ class MediaFileLog(models.Model):
     dtm = models.DateTimeField(auto_now=True)
     request = models.TextField()
     request_params = JSONField(null=True, blank=True)
+    # only useful when is streaming
+    last_position = models.IntegerField(null=True, blank=True)
