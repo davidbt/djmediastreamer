@@ -10,7 +10,8 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login, logout, authenticate
 from django.http import (
-    HttpResponseRedirect, HttpResponseForbidden, FileResponse, JsonResponse
+    HttpResponseRedirect, HttpResponseForbidden, JsonResponse,
+    StreamingHttpResponse
 )
 
 
@@ -195,13 +196,6 @@ class GethMediaFileView(LoginRequiredMixin, View):
             return new_name
         return s
 
-    def read_mediafile(self, full_path):
-        with open(full_path, 'rb') as f:
-            r = True
-            while r:
-                r = f.read(1024*8)
-                yield r
-
     def transcode_process(
         self, full_path, subtitles=None, goto=None, output_format='webm'
     ):
@@ -264,7 +258,7 @@ class GethMediaFileView(LoginRequiredMixin, View):
             output_format = 'webm'
             if 'Chrome' in request.META['HTTP_USER_AGENT']:
                 output_format = 'matroska'
-            return FileResponse(
+            return StreamingHttpResponse(
                 self.transcode_process(
                     mf.full_path, subtitles, goto, output_format).stdout,
                 content_type='video/webm'
