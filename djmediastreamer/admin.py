@@ -15,6 +15,7 @@ class MediaFileAdmin(admin.ModelAdmin):
         'id', 'file_name', 'directory', 'extension', 'size', 'duration',
         'width', 'height', 'a_codec', 'v_codec'
     )
+    search_fields = ('file_name', 'directory', 'a_codec')
 
 admin.site.register(MediaFile, MediaFileAdmin)
 admin.site.register(Directory, DirectoryAdmin)
