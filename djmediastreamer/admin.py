@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import MediaFile, Directory
+from .models import MediaFile, Directory, MediaFileLog
 
 
 class DirectoryAdmin(admin.ModelAdmin):
@@ -17,5 +17,13 @@ class MediaFileAdmin(admin.ModelAdmin):
     )
     search_fields = ('file_name', 'directory', 'a_codec')
 
+
+class MediaFileLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'dtm', 'user', 'mediafile', 'request', 'last_position',
+        'request_params'
+    )
+
 admin.site.register(MediaFile, MediaFileAdmin)
 admin.site.register(Directory, DirectoryAdmin)
+admin.site.register(MediaFileLog, MediaFileLogAdmin)
