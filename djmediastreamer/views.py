@@ -131,6 +131,12 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
 
         selected_subs, url_append = get_subtitles_from_request(request)
         mf.url += url_append
+        mf.transcoded_url = mf.url
+        trnscoded_append = 'download=true'
+        if '?' in mf.transcoded_url:
+            mf.transcoded_url += '&' + trnscoded_append
+        else:
+            mf.transcoded_url += '?' + trnscoded_append
         mf.video_type = 'video/webm'
 
         if mf.extension == 'mp4' and mf.v_codec == 'AVC':
@@ -147,7 +153,7 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         context['subtitles'] = subtitles
         context['goto'] = goto or '00:00:00'
         for d in get_allowed_directories(request.user):
-            if mf.directory.startswith(d.path):
+            if (mf.directory + '/').startswith(d.path + '/'):
                 directory = d
                 break
         context['directory'] = directory
@@ -255,14 +261,23 @@ class GethMediaFileView(LoginRequiredMixin, View):
         ):
             return sendfile(request, mf.full_path)
         else:
+            fn = '.'.join(mf.file_name.split('.')[:-1])
             output_format = 'webm'
             if 'Chrome' in request.META['HTTP_USER_AGENT']:
                 output_format = 'matroska'
-            return StreamingHttpResponse(
+                fn += '.mkv'
+            else:
+                fn += '.webm'
+            res = StreamingHttpResponse(
                 self.transcode_process(
                     mf.full_path, subtitles, goto, output_format).stdout,
-                content_type='video/webm'
+                content_type='video/webm',
             )
+            res['Content-Disposition'] = 'filename="{fn}"'.format(fn=fn)
+            if request.GET.get('download') == 'true':
+                res['Content-Disposition'] = 'attachment; {cd}'.format(
+                    cd=res['Content-Disposition'])
+            return res
 
 
 class DownloadMediaFileView(LoginRequiredMixin, View):
