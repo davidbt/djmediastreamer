@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import MediaFile, Directory, MediaFileLog
+from .models import MediaFile, Directory, MediaFileLog, UserSettings
 
 
 class DirectoryAdmin(admin.ModelAdmin):
@@ -27,3 +27,4 @@ class MediaFileLogAdmin(admin.ModelAdmin):
 admin.site.register(MediaFile, MediaFileAdmin)
 admin.site.register(Directory, DirectoryAdmin)
 admin.site.register(MediaFileLog, MediaFileLogAdmin)
+admin.site.register(UserSettings)

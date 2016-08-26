@@ -80,3 +80,9 @@ class MediaFileLog(models.Model):
     request_params = JSONField(null=True, blank=True)
     # only useful when is streaming
     last_position = models.IntegerField(null=True, blank=True)
+
+
+class UserSettings(models.Model):
+    user = models.OneToOneField(User, related_name='settings')
+    max_width = models.IntegerField(null=True, blank=True)
+    # Here can be added more settings per user

@@ -15,7 +15,7 @@ from django.http import (
 )
 
 
-from .models import MediaFile, Directory, MediaFileLog
+from .models import MediaFile, Directory, MediaFileLog, UserSettings
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
     can_access_mediafile, get_subtitles_from_request
@@ -203,13 +203,18 @@ class GethMediaFileView(LoginRequiredMixin, View):
         return s
 
     def transcode_process(
-        self, full_path, subtitles=None, goto=None, output_format='webm'
+        self, full_path, subtitles=None, goto=None, output_format='webm',
+        width=None, height=None
     ):
         if output_format == 'webm':
-            cmd = [
-                'ffmpeg', '-i', full_path, '-codec:v', 'vp8', '-b:v', '0',
-                '-crf', '24', '-threads', '8', '-speed', '4'
-            ]
+            cmd = ['ffmpeg', '-i', full_path]
+            if width:
+                cmd.extend(['-s',  '{mw}x{h}'.format(mw=width, h=height)])
+            cmd.extend([
+                '-codec:v', 'vp8', '-b:v', '0', '-crf', '24',
+                '-threads', '8', '-speed', '4'
+            ])
+
             extend = ['-f', 'webm', '-']
         elif output_format == 'matroska':
             cmd = [
@@ -268,9 +273,17 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 fn += '.mkv'
             else:
                 fn += '.webm'
+            width = None
+            height = None
+            if UserSettings.objects.filter(user=request.user):
+                max_width = request.user.settings.max_width \
+                    if request.user.settings else None
+                width = max_width if mf.width > max_width else None
+                height = mf.height * width / mf.width if width else None
             res = StreamingHttpResponse(
                 self.transcode_process(
-                    mf.full_path, subtitles, goto, output_format).stdout,
+                    mf.full_path, subtitles, goto, output_format, width, height
+                ).stdout,
                 content_type='video/webm',
             )
             res['Content-Disposition'] = 'filename="{fn}"'.format(fn=fn)
