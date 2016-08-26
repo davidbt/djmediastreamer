@@ -185,7 +185,8 @@ class GethMediaFileView(LoginRequiredMixin, View):
     login_url = '/login/'
     redirect_field_name = 'next'
 
-    def prepare_subtitles(self, s):
+    def prepare_subtitles(self, s, offset=None):
+        res = s
         output = subprocess.check_output(['file', s])
         cmd = None
         split = s.split('.')
@@ -199,8 +200,18 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 .format(s=s, n=new_name)
         if cmd:
             os.system(cmd)
-            return new_name
-        return s
+            res = new_name
+        if offset:
+            split = res.split('.')
+            n = '.'.join(split[:-1])
+            new_name = '{n}.ss.{ext}'.format(n=n, ext=split[-1])
+            cmd = 'ffmpeg -i {res} -ss {offset}  -f {ext} {nn}'.format(
+                res=res, offset=offset, ext=split[-1], nn=new_name
+            )
+            os.system(cmd)
+            res = new_name
+
+        return res
 
     def transcode_process(
         self, full_path, subtitles=None, goto=None, output_format='webm',
@@ -223,10 +234,11 @@ class GethMediaFileView(LoginRequiredMixin, View):
             ]
             extend = ['-f', 'matroska', '-']
         if goto:
-            cmd.extend(['-ss', goto])
+            cmd.insert(1, '-ss')
+            cmd.insert(2, goto)
         if subtitles:
             for i in range(len(subtitles)):
-                subtitles[i] = self.prepare_subtitles(subtitles[i])
+                subtitles[i] = self.prepare_subtitles(subtitles[i], goto)
             if len(subtitles) == 1:
                 cmd.extend(['-vf', 'subtitles={s}'.format(s=subtitles[0])])
             else:
