@@ -157,12 +157,12 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
                 directory = d
                 break
         context['directory'] = directory
-
         MediaFileLog.objects.create(
             mediafile=mf,
             user=request.user,
             request=request.path,
-            request_params=request.GET
+            request_params=request.GET,
+            ip=request.META.get('HTTP_X_REAL_IP', request.META['REMOTE_ADDR'])
         )
         return render(request, self.template_name, context)
 
@@ -177,6 +177,9 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         split = request.body.split('=')
         position = float(split[1])
         mfl.last_position = int(position)
+        mfl.ip = request.META.get(
+            'HTTP_X_REAL_IP', request.META['REMOTE_ADDR']
+        )
         mfl.save()
         return JsonResponse({})
 

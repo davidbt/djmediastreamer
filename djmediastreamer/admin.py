@@ -20,7 +20,7 @@ class MediaFileAdmin(admin.ModelAdmin):
 
 class MediaFileLogAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'dtm', 'user', 'mediafile', 'request', 'last_position',
+        'id', 'dtm', 'user', 'mediafile', 'request', 'last_position', 'ip',
         'request_params'
     )
 
