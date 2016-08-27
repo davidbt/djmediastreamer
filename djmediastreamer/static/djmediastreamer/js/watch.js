@@ -1,3 +1,8 @@
+function change_playback_rate(id, delta) {
+  document.getElementById(id).playbackRate += delta;
+  $('#speed-label').html(document.getElementById(id).playbackRate.toFixed(2) + 'x');
+}
+
 $(document).ready(function(){
   var csrftoken = document.getElementsByName('csrfmiddlewaretoken')[0].value;
   $.ajaxSetup({
@@ -6,6 +11,14 @@ $(document).ready(function(){
         xhr.setRequestHeader("X-CSRFToken", csrftoken);
       }
     }
+  });
+
+  $('#faster-btn').click(function(e) {
+    change_playback_rate('video', 0.05);
+  });
+
+  $('#slower-btn').click(function(e) {
+    change_playback_rate('video', -0.05);
   });
 
   setInterval(function() {

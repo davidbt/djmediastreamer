@@ -12,6 +12,10 @@
     <source src="{{mediafile.url}}" type="{{mediafile.video_type}}">
   </video>
   <br><br>
+  <input id="slower-btn" type="button" value="Slower" />
+  <label id="speed-label">1.00x</label>
+  <input id="faster-btn" type="button" value="Faster" />
+  <br><br>
 
   <form action="." method="get">
     {% csrf_token %}
