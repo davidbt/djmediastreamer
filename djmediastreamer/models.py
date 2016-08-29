@@ -89,3 +89,6 @@ class UserSettings(models.Model):
     # Constant Rate Factor. Lower means better quality
     vp8_crf = models.IntegerField(null=True, blank=True)
     # Here can be added more settings per user
+
+    def __unicode__(self):
+        return self.user.username
