@@ -3,6 +3,7 @@ import time
 import subprocess
 
 from sendfile import sendfile
+from django.conf import settings
 from django.core import management
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView, View
@@ -218,14 +219,14 @@ class GethMediaFileView(LoginRequiredMixin, View):
 
     def transcode_process(
         self, full_path, subtitles=None, goto=None, output_format='webm',
-        width=None, height=None
+        width=None, height=None, vp8_crf=24
     ):
         if output_format == 'webm':
             cmd = ['ffmpeg', '-i', full_path]
             if width:
                 cmd.extend(['-s',  '{mw}x{h}'.format(mw=width, h=height)])
             cmd.extend([
-                '-codec:v', 'vp8', '-b:v', '0', '-crf', '24',
+                '-codec:v', 'vp8', '-b:v', '0', '-crf', str(vp8_crf),
                 '-threads', '8', '-speed', '4'
             ])
 
@@ -290,14 +291,19 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 fn += '.webm'
             width = None
             height = None
+            vp8_crf = settings.DEFAULT_VP8_CRF
             if UserSettings.objects.filter(user=request.user):
                 max_width = request.user.settings.max_width \
                     if request.user.settings else None
                 width = max_width if mf.width > max_width else None
                 height = mf.height * width / mf.width if width else None
+                vp8_crf = request.user.settings.vp8_crf or (
+                    settings.DEFAULT_VP8_CRF
+                )
             res = StreamingHttpResponse(
                 self.transcode_process(
-                    mf.full_path, subtitles, goto, output_format, width, height
+                    mf.full_path, subtitles, goto, output_format, width,
+                    height, vp8_crf
                 ).stdout,
                 content_type='video/webm',
             )

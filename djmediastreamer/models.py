@@ -86,4 +86,6 @@ class MediaFileLog(models.Model):
 class UserSettings(models.Model):
     user = models.OneToOneField(User, related_name='settings')
     max_width = models.IntegerField(null=True, blank=True)
+    # Constant Rate Factor. Lower means better quality
+    vp8_crf = models.IntegerField(null=True, blank=True)
     # Here can be added more settings per user

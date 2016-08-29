@@ -135,3 +135,5 @@ AUDIO_EXTENSIONS = ['mp3']
 
 # TODO: change to 'sendfile.backends.nginx` in production
 SENDFILE_BACKEND = 'sendfile.backends.simple'
+
+DEFAULT_VP8_CRF = 24
