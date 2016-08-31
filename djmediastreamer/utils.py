@@ -1,12 +1,14 @@
 import re
 import subprocess
 
+from django.db import connection
+
 from .models import Directory
 
 
 def is_int(string):
     try:
-        a = int(string)
+        int(string)
         return True
     except:
         return False
@@ -33,13 +35,45 @@ def can_access_mediafile(user, mediafile):
 def get_subtitles_from_request(request):
     # TODO: add doc
     subtitles = []
-    i = 0
     url = ''
     for k, s in request.GET.items():
         if k.startswith('sub_'):
             subtitles.append(s)
             url += '&{k}={s}'.format(k=k, s=s)
     return subtitles, url
+
+
+def execute_query(sql, params=[]):
+    cursor = connection.cursor()
+    cursor.execute(sql, params)
+    return cursor
+
+
+def plot_query(sql, container, params=[], charttype='multiBarChart'):
+    cursor = execute_query(sql, params)
+    data = cursor.fetchall()
+    columns = [c.name for c in cursor.description]
+    ydata = []
+    xdata = [x[0] for x in data]
+    for i, name in enumerate(columns[1:]):
+        ydata.append([y[i + 1] for y in data])
+    chartdata = {'x': xdata}
+    for i, y in enumerate(ydata):
+        chartdata['name{i}'.format(i=i + 1)] = columns[i + 1]
+        chartdata['y{i}'.format(i=i + 1)] = y
+    res = {
+        'chartdata': chartdata,
+        'charttype': charttype,
+        'container': container,
+        'height': 500,
+        'extra': {
+            'x_is_date': False,
+            'x_axis_format': '',
+            'tag_script_js': True,
+            'jquery_on_ready': True
+        }
+    }
+    return res
 
 
 class MediaInfo(object):
@@ -119,7 +153,7 @@ class MediaInfo(object):
     def extract_mkv_subtitles(self, id, index):
         sub_file = 'subtitle_{id}.srt'.format(id=id)
         sub_param = '{index}:{sub_file}'.format(index=index, sub_file=sub_file)
-        output = subprocess.check_output(
+        subprocess.check_output(
             ['mkvextract', 'tracks', self.file_path, sub_param]
         )
         return sub_file

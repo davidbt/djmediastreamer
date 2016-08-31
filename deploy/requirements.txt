@@ -2,3 +2,4 @@ django
 psycopg2
 django-sendfile
 uwsgi
+django-nvd3

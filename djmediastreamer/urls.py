@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.contrib.auth.decorators import permission_required
 
 from . import views
 
@@ -20,6 +21,9 @@ urlpatterns = [
     url(r'^collect/(?P<id>[0-9]+)/$',
         views.CollectDirectoryView.as_view(),
         name='collect'),
+    url(r'^stats/$',
+        permission_required('is_staff')(views.StatisticsView.as_view()),
+        name='statistics'),
     url(r'^login/$', views.LoginView.as_view(), name='login'),
     url(r'^logout/$', views.LogoutView.as_view(), name='logout'),
 ]

@@ -19,7 +19,7 @@ from django.http import (
 from .models import MediaFile, Directory, MediaFileLog, UserSettings
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
-    can_access_mediafile, get_subtitles_from_request
+    can_access_mediafile, get_subtitles_from_request, plot_query
 )
 
 
@@ -343,3 +343,45 @@ class CollectDirectoryView(LoginRequiredMixin, View):
             remove_missing=True
         )
         return HttpResponseRedirect(reverse('directories'))
+
+
+class StatisticsView(LoginRequiredMixin, TemplateView):
+    template_name = "djmediastreamer/statistics.html"
+
+    def get(self, request, *args, **kwargs):
+        context = {}
+        context['chart_by_vcodec'] = plot_query(
+            """select v_codec, count(*) as "Count"
+            from djmediastreamer_mediafile
+            group by v_codec order by 2 asc;""",
+            'container1'
+        )
+        context['chart_by_ext'] = plot_query(
+            """select extension, count(*) as "Count"
+            from djmediastreamer_mediafile
+            group by extension order by 2 asc;""",
+            'container2'
+        )
+        context['chart_by_file_size'] = plot_query(
+            """with v as (
+                select n::bigint * 1048576 as l, n,
+                (n::bigint+250)*1048576 as h,
+                n::text || ' - ' || (n+250)::text || ' MB' as rnge
+                from generate_series(0, 4750, 250) n
+            )
+            select  n::text || ' - ' || (n+250)::text || ' MB' as rnge,
+            count(*) as c
+            from djmediastreamer_mediafile mf
+            left outer join v on size > l and size <= h
+            group by n
+            order by n""",
+            'container3'
+        )
+        context['chart_by_img_size'] = plot_query(
+            """select width::text || 'x' || height::text as reso, count(*)
+            from djmediastreamer_mediafile
+            group by width, height
+            order by width""",
+            'container4'
+        )
+        return render(request, self.template_name, context)

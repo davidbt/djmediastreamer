@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "dependencies": {
         "bootstrap": "3",
-        "datatables": ">=1.10.12"
+        "datatables": ">=1.10.12",
+        "nvd3": ">=1.8.1"
     }
 }

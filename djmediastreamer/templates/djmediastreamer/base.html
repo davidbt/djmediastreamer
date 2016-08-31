@@ -16,6 +16,11 @@
         <a class="nav-item" href='{% url "admin:index" %}'>Admin</a>
       </li>
     </ul>
+    <ul class="nav navbar-nav">
+      <li class="nav navbar-nav">
+        <a class="nav-item" href='{% url "statistics" %}'>Statistics</a>
+      </li>
+    </ul>
     {% endif %}
     <div class="navbar-right">
       <a class="navbar-brand" href='{% url "logout" %}'>Logout</a>
