@@ -49,7 +49,7 @@ def execute_query(sql, params=[]):
     return cursor
 
 
-def plot_query(sql, container, params=[], charttype='multiBarChart'):
+def plot_query(sql, container, params=[], charttype='discreteBarChart'):
     cursor = execute_query(sql, params)
     data = cursor.fetchall()
     columns = [c.name for c in cursor.description]
@@ -66,12 +66,7 @@ def plot_query(sql, container, params=[], charttype='multiBarChart'):
         'charttype': charttype,
         'container': container,
         'height': 500,
-        'extra': {
-            'x_is_date': False,
-            'x_axis_format': '',
-            'tag_script_js': True,
-            'jquery_on_ready': True
-        }
+        'extra': {}
     }
     return res
 
