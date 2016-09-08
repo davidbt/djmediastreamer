@@ -1,0 +1,24 @@
+Description=A Django project that allows you to catalog and stream your videos.
+[Unit]
+After=network.target
+
+[Service]
+PIDFile=/run/djmediastreamer.pid
+ExecStart=YOUR_ENV_PATH/bin/uwsgi --chdir=YOUR_PROJECT_PATH \
+    --uid 1000 \
+    --gid 1000 \
+    --wsgi-file main/wsgi.py \
+    --http :8000 \
+    --env DJANGO_SETTINGS_MODULE=main.settings \
+    --master \
+    --pidfile=/run/djmediastreamer.pid \
+    --processes=5 \
+    --max-requests=500 \
+    --home=YOUR_ENV_PATH \
+    --daemonize=/var/log/djmediastreamer.log
+Type=forking
+Restart=on-failure
+ExecStop=/bin/bash -c "/bin/kill -9 `/bin/cat /run/djmediastreamer.pid`"
+
+[Install]
+WantedBy=multi-user.target
