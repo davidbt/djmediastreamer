@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_nvd3',
+    'channels',
     'djmediastreamer',
 ]
 
@@ -126,6 +127,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = 'staticfiles'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_ipc.IPCChannelLayer",
+        "ROUTING": "main.routing.channel_routing",
+        'CONFIG': {
+            "prefix": "djmediastreamer",
+        },
+    },
+}
 
 VIDEO_EXTENSIONS = [
     'avi', 'mkv', 'rmvb', 'mpeg', 'mpg', 'mp4', 'h263p', 'h263', 'm4v', 'webm',

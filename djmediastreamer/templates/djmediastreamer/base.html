@@ -4,11 +4,14 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src='{% static "node_modules/bootstrap/dist/js/bootstrap.min.js" %}'></script>
   <link href='{% static "node_modules/bootstrap/dist/css/bootstrap.min.css" %}' rel="stylesheet">
+  {% if request.user.is_staff %}
+  <script src='{% static "djmediastreamer/js/base_admin.js" %}'></script>
+  {% endif %}
   {% block extra_head %}
   {% endblock %}
 </head>
 <body>
-  <nav class="navbar navbar-inverse navbar-fixed-top">
+  <nav id="main-nav" class="navbar navbar-inverse navbar-fixed-top">
     <a class="navbar-brand" href='{% url "directories" %}'>djmediastreamer</a>
     {% if request.user.is_staff %}
     <ul class="nav navbar-nav">
