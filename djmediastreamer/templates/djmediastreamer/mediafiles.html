@@ -29,7 +29,7 @@
           <a href="{{ mf.watch_url }}">Watch</a>
           {% if mf.last_position %}
           /
-          <a href="{{ mf.watch_url }}?goto={{mf.last_position}}">Continue watching ({{mf.last_position}})</a>
+          <a href="{{ mf.watch_url }}?goto={{mf.last_position}}">Continue watching ({{mf.last_position}} / {{mf.progress}}%)</a>
           {% endif%}
         </td>
         <td>

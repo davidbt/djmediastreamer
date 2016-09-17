@@ -98,6 +98,7 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
                 )
                 new_initial = initial - time_zero + mlf.last_position
                 mf.last_position = MediaFile(duration=new_initial).str_duration
+                mf.progress = int(new_initial / mf.duration * 100)
         context['mediafiles'] = mfs
         context['directory'] = d
         return render(request, self.template_name, context)
