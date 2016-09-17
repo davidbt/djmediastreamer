@@ -8,7 +8,8 @@ ExecStart=YOUR_ENV_PATH/bin/uwsgi --chdir=YOUR_PROJECT_PATH \
     --uid 1000 \
     --gid 1000 \
     --wsgi-file main/wsgi.py \
-    --http :8000 \
+    --socket=/tmp/djmediastreamer.sock \
+    --chmod-socket=666 \
     --env DJANGO_SETTINGS_MODULE=main.settings \
     --master \
     --pidfile=/run/djmediastreamer.pid \
