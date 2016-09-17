@@ -284,7 +284,9 @@ class GethMediaFileView(LoginRequiredMixin, View):
         else:
             fn = '.'.join(mf.file_name.split('.')[:-1])
             output_format = 'webm'
-            if 'Chrome' in request.META['HTTP_USER_AGENT']:
+            if 'Chrome' in request.META['HTTP_USER_AGENT'] and (
+                'Android' not in request.META['HTTP_USER_AGENT']
+            ):
                 output_format = 'matroska'
                 fn += '.mkv'
             else:
