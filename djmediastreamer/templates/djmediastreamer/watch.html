@@ -11,6 +11,11 @@
   <video id="video" controls autoplay>
     <source src="{{mediafile.url}}" type="{{mediafile.video_type}}">
   </video>
+  <div id="progress-bar-parent" class="progress" style="background-color:lightblue">
+    <div id="progress-bar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width:{{progress}}%">
+      {{progress}}% Complete
+    </div>
+  </div>
   <br><br>
   <input id="slower-btn" type="button" value="Slower" />
   <label id="speed-label">1.00x</label>
@@ -33,5 +38,9 @@
   <a href="{{mediafile.download_url}}">Download original file</a>
   <br>
   <a href="{{mediafile.transcoded_url}}">Download transcoded file</a>
+
+  <script>
+    duration = {{mediafile.duration}};
+  </script>
 
 {% endblock content %}

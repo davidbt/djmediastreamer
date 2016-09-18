@@ -32,6 +32,15 @@ def can_access_mediafile(user, mediafile):
     return False
 
 
+def str_duration_to_seconds(duration):
+    'Converts a duration (HH:MM:SS) to seconds'
+    split = duration.split(':')
+    s = int(split[0]) * 3600
+    s += int(split[1]) * 60
+    s += int(split[2])
+    return s
+
+
 def get_subtitles_from_request(request):
     # TODO: add doc
     subtitles = []

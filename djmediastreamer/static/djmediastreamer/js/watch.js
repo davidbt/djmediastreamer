@@ -21,6 +21,10 @@ $(document).ready(function(){
     change_playback_rate('video', -0.05);
   });
 
+  $("#video").bind("loadedmetadata", function () {
+    $('#progress-bar-parent').css('width', this.videoWidth+'px');
+  });
+
   setInterval(function() {
     var ct = $('#video')[0].currentTime;
     var put_data = {position: ct};
@@ -29,6 +33,10 @@ $(document).ready(function(){
       url: '.',
       type: 'PUT',
       data: put_data,
+      success: function(r) {
+        $('#progress-bar').css('width', r.progress+'%');
+        $('#progress-bar').html(r.progress+'% complete');
+      }
     });
     console.log(ct);
   }, 1000*60);

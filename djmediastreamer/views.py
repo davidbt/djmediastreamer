@@ -19,7 +19,8 @@ from django.http import (
 from .models import MediaFile, Directory, MediaFileLog, UserSettings
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
-    can_access_mediafile, get_subtitles_from_request, plot_query
+    can_access_mediafile, get_subtitles_from_request, plot_query,
+    str_duration_to_seconds
 )
 
 
@@ -98,7 +99,7 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
                 )
                 new_initial = initial - time_zero + mlf.last_position
                 mf.last_position = MediaFile(duration=new_initial).str_duration
-                mf.progress = int(new_initial / mf.duration * 100)
+                mf.progress = int(1.0*new_initial / mf.duration * 100)
         context['mediafiles'] = mfs
         context['directory'] = d
         return render(request, self.template_name, context)
@@ -144,6 +145,11 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         if mf.extension == 'mp4' and mf.v_codec == 'AVC':
             mf.video_type = 'video/mp4'
         context['mediafile'] = mf
+        progress = 0
+        if goto:
+            s = str_duration_to_seconds(goto)
+            progress = int((s*1.0 / mf.duration) * 100)
+        context['progress'] = progress
 
         subtitles_avail = self.lookfor_subtitles(mf)
         subtitles = []
@@ -183,7 +189,11 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
             'HTTP_X_REAL_IP', request.META['REMOTE_ADDR']
         )
         mfl.save()
-        return JsonResponse({})
+        initial = str_duration_to_seconds(
+            mfl.request_params.get('goto', '00:00:00')
+        )
+        progress = int(1.0*(initial + mfl.last_position) / mf.duration * 100)
+        return JsonResponse({'progress': progress})
 
 
 class GethMediaFileView(LoginRequiredMixin, View):
