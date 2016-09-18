@@ -264,7 +264,9 @@ class GethMediaFileView(LoginRequiredMixin, View):
                     s0=subtitles[0], s1=subs_out)]
                 )
         cmd.extend(extend)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        p = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return p
 
     def get_subtitles_files(self, mediafile):
