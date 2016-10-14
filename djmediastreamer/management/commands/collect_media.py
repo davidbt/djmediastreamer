@@ -43,7 +43,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         ignore_directories = Directory.objects.filter(ignore=True)
         lines = sys.stdin
-        directory = options.get('directory')
+        directory = str(options.get('directory'))
         if directory:
             lines = []
             walk = os.walk(directory)
@@ -88,7 +88,6 @@ class Command(BaseCommand):
                             mf.duration = mi.get_duration()
                         found = False
                         mf.save()
-                    print f
                     break
 
         if options.get('remove_missing'):
