@@ -16,6 +16,7 @@ from django.http import (
 )
 
 
+from .forms import StatisticsFiltersForm
 from .models import MediaFile, Directory, MediaFileLog, UserSettings
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
@@ -365,17 +366,31 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         context = {}
+        filters = {'directory': None}
+        form = StatisticsFiltersForm(request.GET)
+        if form.is_valid():
+            directory = form.cleaned_data['directory']
+            filters['directory'] = directory.path
+
         context['chart_by_vcodec'] = plot_query(
             """select v_codec, count(*) as "Count"
             from djmediastreamer_mediafile
+            where
+                (directory like %(directory)s || '%%'
+                OR %(directory)s is NULL)
             group by v_codec order by 2 asc;""",
-            'container1'
+            'container1',
+            filters
         )
         context['chart_by_ext'] = plot_query(
             """select extension, count(*) as "Count"
             from djmediastreamer_mediafile
+            where
+                (directory like %(directory)s || '%%'
+                OR %(directory)s is NULL)
             group by extension order by 2 asc;""",
-            'container2'
+            'container2',
+            filters
         )
         context['chart_by_file_size'] = plot_query(
             """with v as (
@@ -388,15 +403,24 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             count(*) as c
             from djmediastreamer_mediafile mf
             left outer join v on size > l and size <= h
+            where
+                (directory like %(directory)s || '%%'
+                OR %(directory)s is NULL)
             group by n
             order by n""",
-            'container3'
+            'container3',
+            filters
         )
         context['chart_by_img_size'] = plot_query(
             """select width::text || 'x' || height::text as reso, count(*)
             from djmediastreamer_mediafile
+            where
+                (directory like %(directory)s || '%%'
+                OR %(directory)s is NULL)
             group by width, height
             order by width""",
-            'container4'
+            'container4',
+            filters
         )
+        context['form'] = form
         return render(request, self.template_name, context)

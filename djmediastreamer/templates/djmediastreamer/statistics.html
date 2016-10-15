@@ -6,6 +6,7 @@
   <link href='{% static "node_modules/nvd3/build/nv.d3.min.css" %}' rel="stylesheet">
   <script src='{% static "node_modules/d3/d3.min.js" %}'></script>
   <script src='{% static "node_modules/nvd3/build/nv.d3.min.js" %}'></script>
+  <script src='{% static "djmediastreamer/js/statistics.js" %}'></script>
   {% load_chart chart_by_vcodec.charttype chart_by_vcodec.chartdata chart_by_vcodec.container chart_by_vcodec.extra %}
   {% load_chart chart_by_ext.charttype chart_by_ext.chartdata chart_by_ext.container chart_by_ext.extra %}
   {% load_chart chart_by_file_size.charttype chart_by_file_size.chartdata chart_by_file_size.container chart_by_file_size.extra %}
@@ -14,6 +15,19 @@
 {% endblock extra_head %}
 
 {% block content %}
+<div class="row">
+  <div class="col-sm-12">
+    <div class="panel panel-default">
+      <div class="panel-heading">Filters</div>
+        <br>
+        <form id="filters-form" method="get">
+          {{ form }}
+        </form>
+      <div class="panel-body">
+      </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-sm-6">
     <div class="panel panel-default">
