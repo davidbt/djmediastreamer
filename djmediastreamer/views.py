@@ -221,7 +221,7 @@ class GethMediaFileView(LoginRequiredMixin, View):
             split = res.split('.')
             n = '.'.join(split[:-1])
             new_name = '{n}.ss.{ext}'.format(n=n, ext=split[-1])
-            cmd = 'ffmpeg -i {res} -ss {offset}  -f {ext} {nn}'.format(
+            cmd = 'ffmpeg -i {res} -ss {offset} -f {ext} -y {nn}'.format(
                 res=res, offset=offset, ext=split[-1], nn=new_name
             )
             os.system(cmd)
