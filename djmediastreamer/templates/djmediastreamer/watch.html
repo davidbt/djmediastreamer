@@ -22,7 +22,7 @@
   <input id="faster-btn" type="button" value="Faster" />
   <br><br>
 
-  <form action="." method="get">
+  <form id="reload-form" action="." method="get">
     {% csrf_token %}
     <input type="hidden" value="{{mediafile.id}}" id="mediafile_id" name="mediafile_id">
     <label>Jump to</label>

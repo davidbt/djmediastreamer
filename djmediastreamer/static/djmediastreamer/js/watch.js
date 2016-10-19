@@ -21,6 +21,14 @@ $(document).ready(function(){
     change_playback_rate('video', -0.05);
   });
 
+  $('#progress-bar-parent').click(function(e){
+    var w = document.getElementById('video').videoWidth;
+    p = Math.round(e.offsetX*100 / w);
+    $('#goto').val(p + '%');
+    $('#reload-form').submit();
+  });
+
+
   $("#video").bind("loadedmetadata", function () {
     $('#progress-bar-parent').css('width', this.videoWidth+'px');
   });

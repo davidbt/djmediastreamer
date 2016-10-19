@@ -94,10 +94,11 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
             if mfls:
                 mlf = mfls.first()
                 time_zero = time.mktime(time.strptime('00:00:00', '%H:%M:%S'))
-                initial = time.mktime(
-                    time.strptime(
-                        mlf.request_params.get('goto', '00:00:00'), '%H:%M:%S')
-                )
+                goto = mlf.request_params.get('goto', '00:00:00')
+                if goto.endswith('%'):
+                    seconds = str_duration_to_seconds(goto, mf)
+                    goto = MediaFile(duration=seconds).str_duration
+                initial = time.mktime(time.strptime(goto, '%H:%M:%S'))
                 new_initial = initial - time_zero + mlf.last_position
                 mf.last_position = MediaFile(duration=new_initial).str_duration
                 mf.progress = int(1.0*new_initial / mf.duration * 100)
@@ -132,6 +133,9 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         goto = request.GET.get('goto')
         if goto:
             mf.url += '?goto={g}'.format(g=goto)
+            # escape percentage symbol
+            if goto.endswith('%'):
+                mf.url += '25'
 
         selected_subs, url_append = get_subtitles_from_request(request)
         mf.url += url_append
@@ -148,7 +152,7 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         context['mediafile'] = mf
         progress = 0
         if goto:
-            s = str_duration_to_seconds(goto)
+            s = str_duration_to_seconds(goto, mf)
             progress = int((s*1.0 / mf.duration) * 100)
         context['progress'] = progress
 
@@ -191,7 +195,7 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         )
         mfl.save()
         initial = str_duration_to_seconds(
-            mfl.request_params.get('goto', '00:00:00')
+            mfl.request_params.get('goto', '00:00:00'), mf
         )
         progress = int(1.0*(initial + mfl.last_position) / mf.duration * 100)
         return JsonResponse({'progress': progress})
@@ -291,6 +295,9 @@ class GethMediaFileView(LoginRequiredMixin, View):
             subtitles = self.get_subtitles_files(mf)
 
         goto = request.GET.get('goto')
+        if goto and goto.endswith('%'):
+            seconds = str_duration_to_seconds(goto, mf)
+            goto = MediaFile(duration=seconds).str_duration
         if mf.extension == 'mp4' and mf.v_codec == 'AVC' and (
             (not goto) and (not subtitles)
         ):

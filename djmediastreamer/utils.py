@@ -32,13 +32,18 @@ def can_access_mediafile(user, mediafile):
     return False
 
 
-def str_duration_to_seconds(duration):
-    'Converts a duration (HH:MM:SS) to seconds'
-    split = duration.split(':')
-    s = int(split[0]) * 3600
-    s += int(split[1]) * 60
-    s += int(split[2])
-    return s
+def str_duration_to_seconds(duration, mediafile):
+    'Converts a duration (HH:MM:SS or N%) to seconds.'
+    duration = duration.strip()
+    if duration.endswith('%'):
+        p = float(duration[:-1]) / 100
+        return int(p * mediafile.duration)
+    else:
+        split = duration.split(':')
+        s = int(split[0]) * 3600
+        s += int(split[1]) * 60
+        s += int(split[2])
+        return s
 
 
 def get_subtitles_from_request(request):
