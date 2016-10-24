@@ -377,7 +377,8 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         form = StatisticsFiltersForm(request.GET)
         if form.is_valid():
             directory = form.cleaned_data['directory']
-            filters['directory'] = directory.path
+            if directory:
+                filters['directory'] = directory.path
 
         context['chart_by_vcodec'] = plot_query(
             """select v_codec, count(*) as "Count"
@@ -429,6 +430,26 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'container4',
             filters
         )
+        context['chart_by_duration'] = plot_query(
+            """with v as (
+                select n as l,
+                (n+900) as h
+                from generate_series(0, 18000, 900) n
+            )
+            select (l / 60)::text || ' - ' || ((l+900) / 60)::text || ' mins'
+                as duration,
+            count(*) as c
+            from djmediastreamer_mediafile mf
+            left outer join v on mf.duration > l and mf.duration <= h
+            where
+                (directory like %(directory)s || '%%'
+                OR %(directory)s is NULL)
+            group by l
+            order by l;
+            """,
+            'container5',
+            filters
+        )
         context['chart_by_directory'] = plot_query(
             """select d.path, count(*)
             from djmediastreamer_mediafile mf
@@ -436,7 +457,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
                     substring(mf.directory || '/', 1, length(d.path) + 1)
             group by d.path
             order by count(*)""",
-            'container5',
+            'container6',
         )
         context['form'] = form
         return render(request, self.template_name, context)

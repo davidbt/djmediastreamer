@@ -12,7 +12,7 @@
   {% load_chart chart_by_file_size.charttype chart_by_file_size.chartdata chart_by_file_size.container chart_by_file_size.extra %}
   {% load_chart chart_by_img_size.charttype chart_by_img_size.chartdata chart_by_img_size.container chart_by_img_size.extra %}
   {% load_chart chart_by_directory.charttype chart_by_directory.chartdata chart_by_directory.container chart_by_directory.extra %}
-
+  {% load_chart chart_by_duration.charttype chart_by_duration.chartdata chart_by_duration.container chart_by_duration.extra %}
 {% endblock extra_head %}
 
 {% block content %}
@@ -68,7 +68,15 @@
 </div>
 
 <div class="row">
-  <div class="col-sm-12">
+  <div class="col-sm-6">
+    <div class="panel panel-default">
+      <div class="panel-heading">Grouped by duration</div>
+      <div class="panel-body">
+        {% include_container chart_by_duration.container chart_by_duration.height 100p  %}
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6">
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by directory</div>
       <div class="panel-body">
