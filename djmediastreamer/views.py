@@ -429,5 +429,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'container4',
             filters
         )
+        context['chart_by_directory'] = plot_query(
+            """select d.path, count(*)
+            from djmediastreamer_mediafile mf
+                left outer join djmediastreamer_directory d on d.path || '/' =
+                    substring(mf.directory || '/', 1, length(d.path) + 1)
+            group by d.path
+            order by count(*)""",
+            'container5',
+        )
         context['form'] = form
         return render(request, self.template_name, context)
