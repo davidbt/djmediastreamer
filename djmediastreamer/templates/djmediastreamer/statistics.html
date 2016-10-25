@@ -6,13 +6,18 @@
   <link href='{% static "node_modules/nvd3/build/nv.d3.min.css" %}' rel="stylesheet">
   <script src='{% static "node_modules/d3/d3.min.js" %}'></script>
   <script src='{% static "node_modules/nvd3/build/nv.d3.min.js" %}'></script>
+  <script src='{% static "node_modules/highcharts/highcharts.js" %}'></script>
+  <script>
+    charts = [];
+    {% for c in charts %}
+      charts.push({
+        name: "{{c.chart_name}}",
+        container: "{{c.container}}",
+        data: {{c.js_data|safe}}
+      });
+    {% endfor %}
+  </script>
   <script src='{% static "djmediastreamer/js/statistics.js" %}'></script>
-  {% load_chart chart_by_vcodec.charttype chart_by_vcodec.chartdata chart_by_vcodec.container chart_by_vcodec.extra %}
-  {% load_chart chart_by_ext.charttype chart_by_ext.chartdata chart_by_ext.container chart_by_ext.extra %}
-  {% load_chart chart_by_file_size.charttype chart_by_file_size.chartdata chart_by_file_size.container chart_by_file_size.extra %}
-  {% load_chart chart_by_img_size.charttype chart_by_img_size.chartdata chart_by_img_size.container chart_by_img_size.extra %}
-  {% load_chart chart_by_directory.charttype chart_by_directory.chartdata chart_by_directory.container chart_by_directory.extra %}
-  {% load_chart chart_by_duration.charttype chart_by_duration.chartdata chart_by_duration.container chart_by_duration.extra %}
 {% endblock extra_head %}
 
 {% block content %}
@@ -34,7 +39,7 @@
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by video codec</div>
       <div class="panel-body">
-        {% include_container chart_by_vcodec.container chart_by_vcodec.height 100p  %}
+        <div id="container1"></div>
       </div>
     </div>
   </div>
@@ -42,7 +47,7 @@
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by extension</div>
       <div class="panel-body">
-        {% include_container chart_by_ext.container chart_by_ext.height 100p  %}
+        <div id="container2"></div>
       </div>
     </div>
   </div>
@@ -53,7 +58,7 @@
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by file size</div>
       <div class="panel-body">
-        {% include_container chart_by_file_size.container chart_by_file_size.height 100p  %}
+        <div id="container3"></div>
       </div>
     </div>
   </div>
@@ -61,7 +66,7 @@
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by image size</div>
       <div class="panel-body">
-        {% include_container chart_by_img_size.container chart_by_img_size.height 100p  %}
+        <div id="container4"></div>
       </div>
     </div>
   </div>
@@ -72,7 +77,7 @@
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by duration</div>
       <div class="panel-body">
-        {% include_container chart_by_duration.container chart_by_duration.height 100p  %}
+        <div id="container5"></div>
       </div>
     </div>
   </div>
@@ -80,7 +85,7 @@
     <div class="panel panel-default">
       <div class="panel-heading">Grouped by directory</div>
       <div class="panel-body">
-        {% include_container chart_by_directory.container chart_by_directory.height 100p  %}
+        <div id="container6"></div>
       </div>
     </div>
   </div>

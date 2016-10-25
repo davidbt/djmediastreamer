@@ -4,6 +4,7 @@
     "dependencies": {
         "bootstrap": "3",
         "datatables": ">=1.10.12",
-        "nvd3": ">=1.8.1"
+        "nvd3": ">=1.8.1",
+        "highcharts": ">=5.0.0"
     }
 }

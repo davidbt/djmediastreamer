@@ -1,4 +1,5 @@
 import re
+import json
 import subprocess
 
 from django.db import connection
@@ -63,7 +64,9 @@ def execute_query(sql, params=[]):
     return cursor
 
 
-def plot_query(sql, container, params=[], charttype='discreteBarChart'):
+def plot_query(
+    sql, container, params=[], chart_name='', charttype='discreteBarChart'
+):
     cursor = execute_query(sql, params)
     data = cursor.fetchall()
     columns = [c.name for c in cursor.description]
@@ -71,16 +74,21 @@ def plot_query(sql, container, params=[], charttype='discreteBarChart'):
     xdata = [x[0] for x in data]
     for i, name in enumerate(columns[1:]):
         ydata.append([y[i + 1] for y in data])
-    chartdata = {'x': xdata}
-    for i, y in enumerate(ydata):
-        chartdata['name{i}'.format(i=i + 1)] = columns[i + 1]
-        chartdata['y{i}'.format(i=i + 1)] = y
+
+    chartdata = []
+    for i, ys in enumerate(ydata):
+        serie_data = []
+        for j, y in enumerate(ys):
+            serie_data.append({'name': xdata[j], 'y': y})
+        chartdata.append(serie_data)
+
     res = {
         'chartdata': chartdata,
         'charttype': charttype,
         'container': container,
-        'height': 500,
-        'extra': {}
+        'js_data': json.dumps(chartdata),
+        'chart_name': chart_name,
+        'height': 500,  # not used for now
     }
     return res
 
