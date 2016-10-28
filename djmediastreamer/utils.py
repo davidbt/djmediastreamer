@@ -4,7 +4,7 @@ import subprocess
 
 from django.db import connection
 
-from .models import Directory
+from .models import Directory, MediaFile
 
 
 def is_int(string):
@@ -91,6 +91,12 @@ def plot_query(
         'height': 500,  # not used for now
     }
     return res
+
+
+def get_extensions():
+    "Returns all the file extensions, ie: ['mp4', 'mkv', 'avi', ...]"
+    exts = MediaFile.objects.all().values('extension').distinct()
+    return [(None, '(All)')] + [(e['extension'], e['extension']) for e in exts]
 
 
 class MediaInfo(object):

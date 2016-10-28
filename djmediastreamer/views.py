@@ -392,7 +392,10 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
     @classmethod
     def get_chart_definitions(cls):
         charts = OrderedDict()
-        default_filters = ('directory',)
+        default_filters = [f for f in StatisticsFiltersForm.declared_fields]
+        filters_str = """(directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+        AND (extension = %(extension)s OR %(extension)s is NULL)"""
         # chart_by_vcodec #####################################################
         c = {
             'name': 'chart_by_vcodec',
@@ -403,16 +406,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         c['query'] = """select v_codec, count(*) as "Count"
         from djmediastreamer_mediafile
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
-        group by v_codec order by 2 asc;"""
+            {filters_str}
+        group by v_codec order by 2 asc;""".format(filters_str=filters_str)
 
         c['details_query'] = """select mf.id, mf.file_name
         from djmediastreamer_mediafile mf
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
-            AND v_codec = %(v_codec)s;"""
+            {filters_str}
+            AND v_codec = %(v_codec)s;""".format(filters_str=filters_str)
         charts['chart_by_vcodec'] = c
 
         # chart_by_ext ########################################################
@@ -425,16 +426,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         c['query'] = """select extension, count(*) as "Count"
         from djmediastreamer_mediafile
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
-        group by extension order by 2 asc;"""
+            {filters_str}
+        group by extension order by 2 asc;""".format(filters_str=filters_str)
 
         c['details_query'] = """select mf.id, mf.file_name
         from djmediastreamer_mediafile mf
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
-            AND extension = %(extension)s;"""
+            {filters_str}
+            AND extension = %(extension)s;""".format(filters_str=filters_str)
         charts['chart_by_ext'] = c
 
         # chart_by_file_size ##################################################
@@ -455,10 +454,9 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         from djmediastreamer_mediafile mf
         left outer join v on size > l and size <= h
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
+            {filters_str}
         group by n
-        order by n;"""
+        order by n;""".format(filters_str=filters_str)
 
         c['details_query'] = """
         with v as (
@@ -471,10 +469,9 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         from djmediastreamer_mediafile mf
         left outer join v on size > l and size <= h
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
+            {filters_str}
             AND rnge = %(rnge)s
-        order by n;"""
+        order by n;""".format(filters_str=filters_str)
 
         charts['chart_by_file_size'] = c
 
@@ -488,18 +485,16 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         c['query'] = """select width::text || 'x' || height::text as reso, count(*)
         from djmediastreamer_mediafile
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
+            {filters_str}
         group by width, height
-        order by width;"""
+        order by width;""".format(filters_str=filters_str)
 
         c['details_query'] = """select id, file_name
         from djmediastreamer_mediafile
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
+            {filters_str}
             AND width::text || 'x' || height::text = %(resolution)s
-        order by width;"""
+        order by width;""".format(filters_str=filters_str)
 
         charts['chart_by_img_size'] = c
 
@@ -521,10 +516,9 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         from djmediastreamer_mediafile mf
         left outer join v on mf.duration > l and mf.duration <= h
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
+            {filters_str}
         group by l
-        order by l;"""
+        order by l;""".format(filters_str=filters_str)
 
         c['details_query'] = """with v as (
             select n as l,
@@ -535,11 +529,10 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         from djmediastreamer_mediafile mf
         left outer join v on mf.duration > l and mf.duration <= h
         where
-            (directory like %(directory)s || '%%'
-            OR %(directory)s is NULL)
+            {filters_str}
             AND (l / 60)::text || ' - ' || ((l+900) / 60)::text || ' mins' =
                 %(duration)s
-        order by l;"""
+        order by l;""".format(filters_str=filters_str)
 
         charts['chart_by_duration'] = c
 
@@ -555,6 +548,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             left outer join djmediastreamer_directory d on d.path ||
                 '/' = substring(mf.directory
                 || '/', 1, length(d.path) + 1)
+            where (extension = %(extension)s OR %(extension)s is NULL)
         group by d.path
         order by count(*);"""
 
@@ -563,16 +557,20 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             left outer join djmediastreamer_directory d on d.path ||
                 '/' = substring(mf.directory
                 || '/', 1, length(d.path) + 1)
-        where d.path = %(dir)s;"""
+        where
+            (extension = %(extension)s OR %(extension)s is NULL)
+            AND d.path = %(dir)s;"""
 
         charts['chart_by_directory'] = c
         return charts
 
     def get(self, request, *args, **kwargs):
         context = {}
-        filters = {'directory': None}
+        filters = {f: None for f in StatisticsFiltersForm.declared_fields}
         form = StatisticsFiltersForm(request.GET)
         if form.is_valid():
+            for f in filters:
+                filters[f] = form.cleaned_data[f] or None
             directory = form.cleaned_data['directory']
             if directory:
                 filters['directory'] = directory.path

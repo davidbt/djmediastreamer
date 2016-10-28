@@ -82,7 +82,7 @@ function get_chart(serie_name, serie_data, chart_name) {
 }
 
 $(document).ready(function(){
-  $('#id_directory').change(function() {
+  $('form#filters-form :input').change(function() {
     $('#filters-form').submit();
   });
 
