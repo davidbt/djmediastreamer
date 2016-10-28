@@ -377,7 +377,7 @@ class QueryMediaFilesView(LoginRequiredMixin, View):
         filters[chart['details_filter']] = request.GET.get('column_name')
         for f in chart['filters']:
             filters[f] = request.GET.get(f) or None
-        if 'directory' in filters:
+        if filters.get('directory'):
             d = Directory.objects.get(id=filters['directory'])
             filters['directory'] = d.path
         cursor = execute_query(query, filters)
