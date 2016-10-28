@@ -4,9 +4,11 @@
 
 {% block extra_head %}
   <link href='{% static "node_modules/nvd3/build/nv.d3.min.css" %}' rel="stylesheet">
+  <link href='{% static "node_modules/datatables/media/css/jquery.dataTables.min.css" %}' rel="stylesheet">
   <script src='{% static "node_modules/d3/d3.min.js" %}'></script>
   <script src='{% static "node_modules/nvd3/build/nv.d3.min.js" %}'></script>
   <script src='{% static "node_modules/highcharts/highcharts.js" %}'></script>
+  <script src='{% static "node_modules/datatables/media/js/jquery.dataTables.min.js" %}'></script>
   <script>
     charts = [];
     {% for c in charts %}
@@ -21,6 +23,21 @@
 {% endblock extra_head %}
 
 {% block content %}
+<div id="modal-details" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title">Media files</h4>
+        </div>
+        <div id="details-content"></div>
+        <!--<table id="mediafiles-table" class="display" width="100%"></table>-->
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-sm-12">
     <div class="panel panel-default">

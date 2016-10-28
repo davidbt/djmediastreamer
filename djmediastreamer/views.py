@@ -1,6 +1,7 @@
 import os
 import time
 import subprocess
+from collections import OrderedDict
 
 from sendfile import sendfile
 from django.conf import settings
@@ -21,7 +22,7 @@ from .models import MediaFile, Directory, MediaFileLog, UserSettings
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
     can_access_mediafile, get_subtitles_from_request, plot_query,
-    str_duration_to_seconds
+    str_duration_to_seconds, execute_query
 )
 
 
@@ -368,8 +369,204 @@ class CollectDirectoryView(LoginRequiredMixin, View):
         return HttpResponseRedirect(reverse('directories'))
 
 
+class QueryMediaFilesView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        chart = StatisticsView.get_chart_definitions()[request.GET['chart']]
+        query = chart['details_query']
+        filters = {}
+        filters[chart['details_filter']] = request.GET.get('column_name')
+        for f in chart['filters']:
+            filters[f] = request.GET.get(f) or None
+        if 'directory' in filters:
+            d = Directory.objects.get(id=filters['directory'])
+            filters['directory'] = d.path
+        cursor = execute_query(query, filters)
+        columns = [col[0] for col in cursor.description]
+        data = [list(r) for r in cursor.fetchall()]
+        return JsonResponse({'mediafiles': data, 'columns': columns})
+
+
 class StatisticsView(LoginRequiredMixin, TemplateView):
     template_name = "djmediastreamer/statistics.html"
+
+    @classmethod
+    def get_chart_definitions(cls):
+        charts = OrderedDict()
+        default_filters = ('directory',)
+        # chart_by_vcodec #####################################################
+        c = {
+            'name': 'chart_by_vcodec',
+            'container': 'container1',
+            'filters': default_filters,
+            'details_filter': 'v_codec',
+        }
+        c['query'] = """select v_codec, count(*) as "Count"
+        from djmediastreamer_mediafile
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+        group by v_codec order by 2 asc;"""
+
+        c['details_query'] = """select mf.id, mf.file_name
+        from djmediastreamer_mediafile mf
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+            AND v_codec = %(v_codec)s;"""
+        charts['chart_by_vcodec'] = c
+
+        # chart_by_ext ########################################################
+        c = {
+            'name': 'chart_by_ext',
+            'container': 'container2',
+            'filters': default_filters,
+            'details_filter': 'extension',
+        }
+        c['query'] = """select extension, count(*) as "Count"
+        from djmediastreamer_mediafile
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+        group by extension order by 2 asc;"""
+
+        c['details_query'] = """select mf.id, mf.file_name
+        from djmediastreamer_mediafile mf
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+            AND extension = %(extension)s;"""
+        charts['chart_by_ext'] = c
+
+        # chart_by_file_size ##################################################
+        c = {
+            'name': 'chart_by_file_size',
+            'container': 'container3',
+            'filters': default_filters,
+            'details_filter': 'rnge',
+        }
+        c['query'] = """with v as (
+            select n::bigint * 1048576 as l, n,
+            (n::bigint+250)*1048576 as h,
+            n::text || ' - ' || (n+250)::text || ' MB' as rnge
+            from generate_series(0, 4750, 250) n
+        )
+        select  n::text || ' - ' || (n+250)::text || ' MB' as rnge,
+        count(*) as c
+        from djmediastreamer_mediafile mf
+        left outer join v on size > l and size <= h
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+        group by n
+        order by n;"""
+
+        c['details_query'] = """
+        with v as (
+            select n::bigint * 1048576 as l, n,
+            (n::bigint+250)*1048576 as h,
+            n::text || ' - ' || (n+250)::text || ' MB' as rnge
+            from generate_series(0, 4750, 250) n
+        )
+        select mf.id, mf.file_name
+        from djmediastreamer_mediafile mf
+        left outer join v on size > l and size <= h
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+            AND rnge = %(rnge)s
+        order by n;"""
+
+        charts['chart_by_file_size'] = c
+
+        # chart_by_img_size ###################################################
+        c = {
+            'name': 'chart_by_img_size',
+            'container': 'container4',
+            'filters': default_filters,
+            'details_filter': 'resolution',
+        }
+        c['query'] = """select width::text || 'x' || height::text as reso, count(*)
+        from djmediastreamer_mediafile
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+        group by width, height
+        order by width;"""
+
+        c['details_query'] = """select id, file_name
+        from djmediastreamer_mediafile
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+            AND width::text || 'x' || height::text = %(resolution)s
+        order by width;"""
+
+        charts['chart_by_img_size'] = c
+
+        # chart_by_duration ###################################################
+        c = {
+            'name': 'chart_by_duration',
+            'container': 'container5',
+            'filters': default_filters,
+            'details_filter': 'duration',
+        }
+        c['query'] = """with v as (
+            select n as l,
+            (n+900) as h
+            from generate_series(0, 18000, 900) n
+        )
+        select (l / 60)::text || ' - ' || ((l+900) / 60)::text ||
+            ' mins' as duration,
+        count(*) as c
+        from djmediastreamer_mediafile mf
+        left outer join v on mf.duration > l and mf.duration <= h
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+        group by l
+        order by l;"""
+
+        c['details_query'] = """with v as (
+            select n as l,
+            (n+900) as h
+            from generate_series(0, 18000, 900) n
+        )
+        select id, file_name
+        from djmediastreamer_mediafile mf
+        left outer join v on mf.duration > l and mf.duration <= h
+        where
+            (directory like %(directory)s || '%%'
+            OR %(directory)s is NULL)
+            AND (l / 60)::text || ' - ' || ((l+900) / 60)::text || ' mins' =
+                %(duration)s
+        order by l;"""
+
+        charts['chart_by_duration'] = c
+
+        # chart_by_directory ##################################################
+        c = {
+            'name': 'chart_by_directory',
+            'container': 'container6',
+            'filters': default_filters,
+            'details_filter': 'dir',  # the clicked bar, not the dropdown
+        }
+        c['query'] = """select d.path, count(*)
+        from djmediastreamer_mediafile mf
+            left outer join djmediastreamer_directory d on d.path ||
+                '/' = substring(mf.directory
+                || '/', 1, length(d.path) + 1)
+        group by d.path
+        order by count(*);"""
+
+        c['details_query'] = """select mf.id, mf.file_name
+        from djmediastreamer_mediafile mf
+            left outer join djmediastreamer_directory d on d.path ||
+                '/' = substring(mf.directory
+                || '/', 1, length(d.path) + 1)
+        where d.path = %(dir)s;"""
+
+        charts['chart_by_directory'] = c
+        return charts
 
     def get(self, request, *args, **kwargs):
         context = {}
@@ -380,106 +577,10 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             if directory:
                 filters['directory'] = directory.path
         charts = []
-
-        charts.append(
-            plot_query(
-                """select v_codec, count(*) as "Count"
-                from djmediastreamer_mediafile
-                where
-                    (directory like %(directory)s || '%%'
-                    OR %(directory)s is NULL)
-                group by v_codec order by 2 asc;""",
-                'container1',
-                filters,
-                'chart_by_vcodec'
+        for _, c in self.get_chart_definitions().items():
+            charts.append(
+                plot_query(c['query'], c['container'], filters, c['name'])
             )
-        )
-        charts.append(
-            plot_query(
-                """select extension, count(*) as "Count"
-                from djmediastreamer_mediafile
-                where
-                    (directory like %(directory)s || '%%'
-                    OR %(directory)s is NULL)
-                group by extension order by 2 asc;""",
-                'container2',
-                filters,
-                'chart_by_ext'
-            )
-        )
-        charts.append(
-            plot_query(
-                """with v as (
-                    select n::bigint * 1048576 as l, n,
-                    (n::bigint+250)*1048576 as h,
-                    n::text || ' - ' || (n+250)::text || ' MB' as rnge
-                    from generate_series(0, 4750, 250) n
-                )
-                select  n::text || ' - ' || (n+250)::text || ' MB' as rnge,
-                count(*) as c
-                from djmediastreamer_mediafile mf
-                left outer join v on size > l and size <= h
-                where
-                    (directory like %(directory)s || '%%'
-                    OR %(directory)s is NULL)
-                group by n
-                order by n""",
-                'container3',
-                filters,
-                'chart_by_file_size'
-            )
-        )
-        charts.append(
-            plot_query(
-                """select width::text || 'x' || height::text as reso, count(*)
-                from djmediastreamer_mediafile
-                where
-                    (directory like %(directory)s || '%%'
-                    OR %(directory)s is NULL)
-                group by width, height
-                order by width""",
-                'container4',
-                filters,
-                'chart_by_img_size'
-            )
-        )
-        charts.append(
-            plot_query(
-                """with v as (
-                    select n as l,
-                    (n+900) as h
-                    from generate_series(0, 18000, 900) n
-                )
-                select (l / 60)::text || ' - ' || ((l+900) / 60)::text ||
-                    ' mins' as duration,
-                count(*) as c
-                from djmediastreamer_mediafile mf
-                left outer join v on mf.duration > l and mf.duration <= h
-                where
-                    (directory like %(directory)s || '%%'
-                    OR %(directory)s is NULL)
-                group by l
-                order by l;
-                """,
-                'container5',
-                filters,
-                'chart_by_duration'
-            )
-        )
-        charts.append(
-            plot_query(
-                """select d.path, count(*)
-                from djmediastreamer_mediafile mf
-                    left outer join djmediastreamer_directory d on d.path ||
-                        '/' = substring(mf.directory
-                        || '/', 1, length(d.path) + 1)
-                group by d.path
-                order by count(*)""",
-                'container6',
-                [],
-                'chart_by_directory'
-            )
-        )
         context['charts'] = charts
         context['form'] = form
         return render(request, self.template_name, context)

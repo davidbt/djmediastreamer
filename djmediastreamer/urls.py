@@ -24,6 +24,9 @@ urlpatterns = [
     url(r'^stats/$',
         permission_required('is_staff')(views.StatisticsView.as_view()),
         name='statistics'),
+    url(r'^stats/query/$',
+        permission_required('is_staff')(views.QueryMediaFilesView.as_view()),
+        name='query_mediafiles'),
     url(r'^login/$', views.LoginView.as_view(), name='login'),
     url(r'^logout/$', views.LogoutView.as_view(), name='logout'),
 ]
