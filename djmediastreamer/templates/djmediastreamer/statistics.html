@@ -4,6 +4,7 @@
 
 {% block extra_head %}
   <link href='{% static "node_modules/nvd3/build/nv.d3.min.css" %}' rel="stylesheet">
+  <link href='{% static "djmediastreamer/css/statistics.css" %}' rel="stylesheet">
   <link href='{% static "node_modules/datatables/media/css/jquery.dataTables.min.css" %}' rel="stylesheet">
   <script src='{% static "node_modules/d3/d3.min.js" %}'></script>
   <script src='{% static "node_modules/nvd3/build/nv.d3.min.js" %}'></script>
@@ -24,7 +25,7 @@
 
 {% block content %}
 <div id="modal-details" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-extra-lg">
     <div class="modal-content">
       <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
