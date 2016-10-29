@@ -93,10 +93,19 @@ def plot_query(
     return res
 
 
+def get_distinct_field(field, model=MediaFile):
+    res = model.objects.all().values(field).distinct()
+    return [(None, '(All)')] + [(x[field], x[field]) for x in res]
+
+
 def get_extensions():
     "Returns all the file extensions, ie: ['mp4', 'mkv', 'avi', ...]"
-    exts = MediaFile.objects.all().values('extension').distinct()
-    return [(None, '(All)')] + [(e['extension'], e['extension']) for e in exts]
+    return get_distinct_field('extension')
+
+
+def get_video_codecs():
+    "Returns all the file video codecs, ie: ['AVC', 'HEVC', ...]"
+    return get_distinct_field('v_codec')
 
 
 class MediaInfo(object):

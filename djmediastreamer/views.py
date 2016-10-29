@@ -395,7 +395,8 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         default_filters = [f for f in StatisticsFiltersForm.declared_fields]
         filters_str = """(directory like %(directory)s || '%%'
             OR %(directory)s is NULL)
-        AND (extension = %(extension)s OR %(extension)s is NULL)"""
+        AND (extension = %(extension)s OR %(extension)s is NULL)
+        AND (v_codec = %(video_codec)s OR %(video_codec)s is NULL)"""
         # chart_by_vcodec #####################################################
         c = {
             'name': 'chart_by_vcodec',
@@ -549,6 +550,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
                 '/' = substring(mf.directory
                 || '/', 1, length(d.path) + 1)
             where (extension = %(extension)s OR %(extension)s is NULL)
+                AND (v_codec = %(video_codec)s OR %(video_codec)s is NULL)
         group by d.path
         order by count(*);"""
 
@@ -559,6 +561,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
                 || '/', 1, length(d.path) + 1)
         where
             (extension = %(extension)s OR %(extension)s is NULL)
+            AND (v_codec = %(video_codec)s OR %(video_codec)s is NULL)
             AND d.path = %(dir)s;"""
 
         charts['chart_by_directory'] = c
