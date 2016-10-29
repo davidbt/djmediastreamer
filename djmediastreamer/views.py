@@ -565,6 +565,45 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             AND d.path = %(dir)s;"""
 
         charts['chart_by_directory'] = c
+
+        # chart_by_repeated ##################################################
+        # repeated files
+        c = {
+            'name': 'chart_by_repeated',
+            'container': 'container7',
+            'filters': default_filters,
+            'details_filter': 'dir',  # the clicked bar, not the dropdown
+        }
+        c['query'] = """with v as (
+        select d.path
+        from djmediastreamer_mediafile mf1
+            inner join djmediastreamer_mediafile mf2 on mf2.id > mf1.id
+                and mf1.file_name = mf2.file_name
+            left outer join djmediastreamer_directory d on d.path ||
+                '/' = substring(mf1.directory || '/', 1, length(d.path) + 1)
+        where (mf1.extension = %(extension)s OR %(extension)s is NULL)
+            AND (mf1.v_codec = %(video_codec)s OR %(video_codec)s is NULL)
+        )
+        select path, count(*)
+        from v
+        group by path
+        order by count(*)"""
+
+        c['details_query'] = """select mf1.id, mf1.file_name,
+            mf1.directory as dir1,
+            mf2.directory as dir2
+        from djmediastreamer_mediafile mf1
+            inner join djmediastreamer_mediafile mf2 on mf2.id > mf1.id
+                and mf1.file_name = mf2.file_name
+            left outer join djmediastreamer_directory d on d.path ||
+            '/' = substring(mf1.directory || '/', 1, length(d.path) + 1)
+        where (mf1.extension = %(extension)s OR %(extension)s is NULL)
+            AND (mf1.v_codec = %(video_codec)s OR %(video_codec)s is NULL)
+            AND d.path = %(dir)s
+        order by mf2.file_name;
+        """
+
+        charts['chart_by_repeated'] = c
         return charts
 
     def get(self, request, *args, **kwargs):
