@@ -156,6 +156,7 @@ class MediaInfo(object):
 
     def parse_duration(self, duration):
         'Returns the file duration in seconds.'
+        duration = duration.replace('min', 'mn')
         p = re.compile('([0-9]+h)*([0-9]+mn)*([0-9]+s)*([0-9]+ms)*')
         match = p.findall(duration)
         if match:
