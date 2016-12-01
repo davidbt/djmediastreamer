@@ -393,6 +393,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
     def get_chart_definitions(cls):
         charts = OrderedDict()
         default_filters = [f for f in StatisticsFiltersForm.declared_fields]
+        default_columns = ', '.join(['mf.id', 'mf.file_name', 'mf.directory'])
         filters_str = """(directory like %(directory)s || '%%'
             OR %(directory)s is NULL)
         AND (extension = %(extension)s OR %(extension)s is NULL)
@@ -410,11 +411,13 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             {filters_str}
         group by v_codec order by 2 asc;""".format(filters_str=filters_str)
 
-        c['details_query'] = """select mf.id, mf.file_name
+        c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
         where
             {filters_str}
-            AND v_codec = %(v_codec)s;""".format(filters_str=filters_str)
+            AND v_codec = %(v_codec)s;""".format(
+                filters_str=filters_str, columns_str=default_columns
+        )
         charts['chart_by_vcodec'] = c
 
         # chart_by_ext ########################################################
@@ -422,7 +425,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'name': 'chart_by_ext',
             'container': 'container2',
             'filters': default_filters,
-            'details_filter': 'extension',
+            'details_filter': 'ext',
         }
         c['query'] = """select extension, count(*) as "Count"
         from djmediastreamer_mediafile
@@ -430,11 +433,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             {filters_str}
         group by extension order by 2 asc;""".format(filters_str=filters_str)
 
-        c['details_query'] = """select mf.id, mf.file_name
+        c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
         where
             {filters_str}
-            AND extension = %(extension)s;""".format(filters_str=filters_str)
+            AND extension = %(ext)s;""".format(
+                filters_str=filters_str, columns_str=default_columns
+        )
+
         charts['chart_by_ext'] = c
 
         # chart_by_file_size ##################################################
@@ -466,13 +472,15 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             n::text || ' - ' || (n+250)::text || ' MB' as rnge
             from generate_series(0, 4750, 250) n
         )
-        select mf.id, mf.file_name
+        select {columns_str}
         from djmediastreamer_mediafile mf
         left outer join v on size > l and size <= h
         where
             {filters_str}
             AND rnge = %(rnge)s
-        order by n;""".format(filters_str=filters_str)
+        order by n;""".format(
+            filters_str=filters_str, columns_str=default_columns
+        )
 
         charts['chart_by_file_size'] = c
 
@@ -490,12 +498,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         group by width, height
         order by width;""".format(filters_str=filters_str)
 
-        c['details_query'] = """select id, file_name
-        from djmediastreamer_mediafile
+        c['details_query'] = """select {columns_str}
+        from djmediastreamer_mediafile mf
         where
             {filters_str}
             AND width::text || 'x' || height::text = %(resolution)s
-        order by width;""".format(filters_str=filters_str)
+        order by width;""".format(
+            filters_str=filters_str, columns_str=default_columns
+        )
 
         charts['chart_by_img_size'] = c
 
@@ -526,14 +536,16 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             (n+900) as h
             from generate_series(0, 18000, 900) n
         )
-        select id, file_name
+        select {columns_str}
         from djmediastreamer_mediafile mf
         left outer join v on mf.duration > l and mf.duration <= h
         where
             {filters_str}
             AND (l / 60)::text || ' - ' || ((l+900) / 60)::text || ' mins' =
                 %(duration)s
-        order by l;""".format(filters_str=filters_str)
+        order by l;""".format(
+            filters_str=filters_str, columns_str=default_columns
+        )
 
         charts['chart_by_duration'] = c
 
@@ -554,7 +566,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         group by d.path
         order by count(*);"""
 
-        c['details_query'] = """select mf.id, mf.file_name
+        c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
             left outer join djmediastreamer_directory d on d.path ||
                 '/' = substring(mf.directory
@@ -562,7 +574,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         where
             (extension = %(extension)s OR %(extension)s is NULL)
             AND (v_codec = %(video_codec)s OR %(video_codec)s is NULL)
-            AND d.path = %(dir)s;"""
+            AND d.path = %(dir)s;""".format(columns_str=default_columns)
 
         charts['chart_by_directory'] = c
 
