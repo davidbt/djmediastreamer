@@ -1,5 +1,6 @@
 import re
 import json
+import decimal
 import subprocess
 
 from django.db import connection
@@ -65,8 +66,8 @@ def execute_query(sql, params=[]):
 
 
 def plot_query(
-    sql, container, params=[], chart_name='', charttype='discreteBarChart'
-):
+        sql, container, params=[], chart_name='', serie_name='Count',
+        charttype='discreteBarChart'):
     cursor = execute_query(sql, params)
     data = cursor.fetchall()
     columns = [c.name for c in cursor.description]
@@ -79,6 +80,9 @@ def plot_query(
     for i, ys in enumerate(ydata):
         serie_data = []
         for j, y in enumerate(ys):
+            # Decimal is not JSON serializable
+            if isinstance(y, decimal.Decimal):
+                y = float(y)
             serie_data.append({'name': xdata[j], 'y': y})
         chartdata.append(serie_data)
 
@@ -88,6 +92,7 @@ def plot_query(
         'container': container,
         'js_data': json.dumps(chartdata),
         'chart_name': chart_name,
+        'serie_name': serie_name,
         'height': 500,  # not used for now
     }
     return res

@@ -18,3 +18,7 @@ class StatisticsFiltersForm(forms.Form):
         required=False,
         choices=get_video_codecs,
     )
+    to_chart = forms.ChoiceField(
+        required=False,
+        choices=[('count', 'Count'), ('size', 'Size (Gb)')],
+    )

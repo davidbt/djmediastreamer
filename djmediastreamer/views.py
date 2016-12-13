@@ -371,7 +371,9 @@ class CollectDirectoryView(LoginRequiredMixin, View):
 
 class QueryMediaFilesView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        chart = StatisticsView.get_chart_definitions()[request.GET['chart']]
+        agg_column = request.GET['to_chart'] or 'count'
+        chart = StatisticsView.get_chart_definitions(
+            agg_column)[request.GET['chart']]
         query = chart['details_query']
         filters = {}
         filters[chart['details_filter']] = request.GET.get('column_name')
@@ -390,7 +392,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
     template_name = "djmediastreamer/statistics.html"
 
     @classmethod
-    def get_chart_definitions(cls):
+    def get_chart_definitions(cls, agg_column):
         charts = OrderedDict()
         default_filters = [f for f in StatisticsFiltersForm.declared_fields]
         default_columns = ', '.join(['mf.id', 'mf.file_name', 'mf.directory'])
@@ -398,6 +400,10 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             OR %(directory)s is NULL)
         AND (extension = %(extension)s OR %(extension)s is NULL)
         AND (v_codec = %(video_codec)s OR %(video_codec)s is NULL)"""
+        agg_columns = {
+            'count': 'count(*) as "Count"',
+            'size': '(sum(size) / (1024*1024*1024))::decimal(15,2) as "Gb"'
+        }
         # chart_by_vcodec #####################################################
         c = {
             'name': 'chart_by_vcodec',
@@ -405,11 +411,13 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'filters': default_filters,
             'details_filter': 'v_codec',
         }
-        c['query'] = """select v_codec, count(*) as "Count"
+        c['query'] = """select v_codec, {agg_col}
         from djmediastreamer_mediafile
         where
             {filters_str}
-        group by v_codec order by 2 asc;""".format(filters_str=filters_str)
+        group by v_codec order by 2 asc;""".format(
+            filters_str=filters_str,
+            agg_col=agg_columns[agg_column])
 
         c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
@@ -427,11 +435,12 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'filters': default_filters,
             'details_filter': 'ext',
         }
-        c['query'] = """select extension, count(*) as "Count"
+        c['query'] = """select extension, {agg_col}
         from djmediastreamer_mediafile
         where
             {filters_str}
-        group by extension order by 2 asc;""".format(filters_str=filters_str)
+        group by extension order by 2 asc;""".format(
+            filters_str=filters_str, agg_col=agg_columns[agg_column])
 
         c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
@@ -457,13 +466,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             from generate_series(0, 4750, 250) n
         )
         select  n::text || ' - ' || (n+250)::text || ' MB' as rnge,
-        count(*) as c
+        {agg_col}
         from djmediastreamer_mediafile mf
         left outer join v on size > l and size <= h
         where
             {filters_str}
         group by n
-        order by n;""".format(filters_str=filters_str)
+        order by n;""".format(
+            filters_str=filters_str, agg_col=agg_columns[agg_column])
 
         c['details_query'] = """
         with v as (
@@ -491,12 +501,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'filters': default_filters,
             'details_filter': 'resolution',
         }
-        c['query'] = """select width::text || 'x' || height::text as reso, count(*)
+        c['query'] = """select width::text || 'x' || height::text as reso, {agg_col}
         from djmediastreamer_mediafile
         where
             {filters_str}
         group by width, height
-        order by width;""".format(filters_str=filters_str)
+        order by width;""".format(
+            filters_str=filters_str,
+            agg_col=agg_columns[agg_column])
 
         c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
@@ -523,13 +535,14 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         )
         select (l / 60)::text || ' - ' || ((l+900) / 60)::text ||
             ' mins' as duration,
-        count(*) as c
+        {agg_col}
         from djmediastreamer_mediafile mf
         left outer join v on mf.duration > l and mf.duration <= h
         where
             {filters_str}
         group by l
-        order by l;""".format(filters_str=filters_str)
+        order by l;""".format(
+            filters_str=filters_str, agg_col=agg_columns[agg_column])
 
         c['details_query'] = """with v as (
             select n as l,
@@ -556,7 +569,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'filters': default_filters,
             'details_filter': 'dir',  # the clicked bar, not the dropdown
         }
-        c['query'] = """select d.path, count(*)
+        c['query'] = """select d.path, {agg_col}
         from djmediastreamer_mediafile mf
             left outer join djmediastreamer_directory d on d.path ||
                 '/' = substring(mf.directory
@@ -564,7 +577,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             where (extension = %(extension)s OR %(extension)s is NULL)
                 AND (v_codec = %(video_codec)s OR %(video_codec)s is NULL)
         group by d.path
-        order by count(*);"""
+        order by 2;""".format(agg_col=agg_columns[agg_column])
 
         c['details_query'] = """select {columns_str}
         from djmediastreamer_mediafile mf
@@ -587,7 +600,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             'details_filter': 'dir',  # the clicked bar, not the dropdown
         }
         c['query'] = """with v as (
-        select d.path
+        select d.path, mf1.size
         from djmediastreamer_mediafile mf1
             inner join djmediastreamer_mediafile mf2 on mf2.id > mf1.id
                 and mf1.file_name = mf2.file_name
@@ -596,10 +609,10 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         where (mf1.extension = %(extension)s OR %(extension)s is NULL)
             AND (mf1.v_codec = %(video_codec)s OR %(video_codec)s is NULL)
         )
-        select path, count(*)
+        select path, {agg_col}
         from v
         group by path
-        order by count(*)"""
+        order by 2""".format(agg_col=agg_columns[agg_column])
 
         c['details_query'] = """select mf1.id, mf1.file_name,
             mf1.directory as dir1,
@@ -629,9 +642,11 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             if directory:
                 filters['directory'] = directory.path
         charts = []
-        for _, c in self.get_chart_definitions().items():
-            charts.append(
-                plot_query(c['query'], c['container'], filters, c['name'])
+        agg_column = filters['to_chart'] or 'count'
+        for _, c in self.get_chart_definitions(agg_column).items():
+            charts.append(plot_query(
+                c['query'], c['container'], filters, c['name'],
+                agg_column.capitalize())
             )
         context['charts'] = charts
         context['form'] = form

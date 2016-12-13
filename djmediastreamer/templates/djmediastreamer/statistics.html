@@ -16,7 +16,8 @@
       charts.push({
         name: "{{c.chart_name}}",
         container: "{{c.container}}",
-        data: {{c.js_data|safe}}
+        data: {{c.js_data|safe}},
+        serie_name: "{{c.serie_name}}",
       });
     {% endfor %}
   </script>

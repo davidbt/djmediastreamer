@@ -88,7 +88,7 @@ $(document).ready(function(){
 
   charts.forEach(function(e){
     // e.data[0] because is just one serie for the moment.
-    $('#'+e.container).highcharts(get_chart('Count', e.data[0], e.name));
+    $('#'+e.container).highcharts(get_chart(e.serie_name, e.data[0], e.name));
   });
 
 });
