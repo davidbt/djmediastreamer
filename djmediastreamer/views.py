@@ -4,6 +4,7 @@ import subprocess
 from collections import OrderedDict
 
 from sendfile import sendfile
+from django.db.models import Q
 from django.conf import settings
 from django.core import management
 from django.core.urlresolvers import reverse
@@ -82,9 +83,9 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
         if not can_access_directory(request.user, d):
             return HttpResponseForbidden()
 
-        mfs = MediaFile.objects.filter(
-            directory__startswith=d.path
-        ).order_by('file_name')
+        q1 = Q(directory__startswith=d.path + '/')  # subdirectories
+        q2 = Q(directory=d.path)  # same directory
+        mfs = MediaFile.objects.filter(q1 | q2).order_by('file_name')
         mediafiles = []
         for mf in mfs:
             mf.subdirectory = mf.directory[len(d.path) + 1:]
