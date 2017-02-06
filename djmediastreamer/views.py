@@ -88,6 +88,8 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
         mediafiles = []
         for mf in mfs:
             mf.subdirectory = mf.directory[len(d.path) + 1:]
+            mf.subtitles_langs = ', '.join([
+                s.language for s in mf.subtitles.all()])
             mediafiles.append(mf)
             mfls = MediaFileLog.objects.filter(
                 mediafile=mf, user=request.user, last_position__isnull=False

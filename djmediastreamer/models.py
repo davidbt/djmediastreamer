@@ -100,7 +100,8 @@ class SubtitlesFile(models.Model):
     file_name = models.TextField()
     directory = models.TextField()
     extension = models.CharField(max_length=5)
-    mediafile = models.ForeignKey(MediaFile, null=True, blank=True)
+    mediafile = models.ForeignKey(MediaFile, null=True, blank=True,
+                                  related_name='subtitles')
     language = models.TextField(null=True, blank=True)
 
 
