@@ -142,7 +142,7 @@ class Command(BaseCommand):
             ignore = False
             d = t[0]
             for ign_dir in ignore_directories:
-                if d.startswith(ign_dir):
+                if d.startswith(ign_dir.path):
                     ignore = True
                     break
             if ignore:
