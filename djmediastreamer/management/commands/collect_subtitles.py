@@ -73,8 +73,9 @@ class Command(BaseCommand):
         mediafiles = MediaFile.objects.filter(directory=directory)
         rel_mediafile = None
         for mf in mediafiles:
+            fn = mf.file_name.encode('utf8')
             if file_name.lower().startswith(
-                    '.'.join(mf.file_name.lower().split('.')[:-1])):
+                    '.'.join(fn.lower().split('.')[:-1])):
                 rel_mediafile = mf
                 # TODO: maybe look for another match
                 break
@@ -142,7 +143,7 @@ class Command(BaseCommand):
             ignore = False
             d = t[0]
             for ign_dir in ignore_directories:
-                if d.startswith(ign_dir.path):
+                if d.startswith(str(ign_dir.path)):
                     ignore = True
                     break
             if ignore:
