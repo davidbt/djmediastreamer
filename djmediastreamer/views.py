@@ -366,6 +366,10 @@ class CollectDirectoryView(LoginRequiredMixin, View):
             directory=d.path,
             remove_missing=True
         )
+        management.call_command(
+            'collect_subtitles',
+            directory=d.path,
+        )
         return HttpResponseRedirect(reverse('directories'))
 
 
