@@ -21,6 +21,7 @@ class Command(BaseCommand):
         'ger': 'german',
         'fre': 'french',
         'por': 'portuguese',
+        'ita': 'italian',
     }
 
     def add_arguments(self, parser):
