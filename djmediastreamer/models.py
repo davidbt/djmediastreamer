@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.contrib.postgres.fields import JSONField
 
+from .fields import TsVectorField
+
 
 class MediaFile(models.Model):
     file_name = models.TextField()
@@ -92,3 +94,20 @@ class UserSettings(models.Model):
 
     def __unicode__(self):
         return self.user.username
+
+
+class SubtitlesFile(models.Model):
+    file_name = models.TextField()
+    directory = models.TextField()
+    extension = models.CharField(max_length=5)
+    mediafile = models.ForeignKey(MediaFile, null=True, blank=True)
+    language = models.TextField(null=True, blank=True)
+
+
+class SubtitlesLine(models.Model):
+    subtitlefile = models.ForeignKey(SubtitlesFile)
+    index = models.IntegerField(db_index=True)
+    start = models.TimeField(db_index=True)
+    end = models.TimeField(db_index=True)
+    text = models.TextField()
+    text_vector = TsVectorField(null=True, blank=True)
