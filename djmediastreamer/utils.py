@@ -5,7 +5,7 @@ import subprocess
 
 from django.db import connection
 
-from .models import Directory, MediaFile
+from .models import Directory, MediaFile, SubtitlesFile
 
 
 def is_int(string):
@@ -54,7 +54,8 @@ def get_subtitles_from_request(request):
     url = ''
     for k, s in request.GET.items():
         if k.startswith('sub_'):
-            subtitles.append(s)
+            sf = SubtitlesFile.objects.get(id=s.split(' ')[0])
+            subtitles.append(sf)
             url += '&{k}={s}'.format(k=k, s=s)
     return subtitles, url
 

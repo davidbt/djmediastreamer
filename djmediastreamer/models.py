@@ -104,6 +104,10 @@ class SubtitlesFile(models.Model):
                                   related_name='subtitles')
     language = models.TextField(null=True, blank=True)
 
+    @property
+    def is_internal(self):
+        return self.file_name.lower().endswith('.mkv')
+
 
 class SubtitlesLine(models.Model):
     subtitlefile = models.ForeignKey(SubtitlesFile)
