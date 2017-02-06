@@ -19,7 +19,9 @@ from django.http import (
 
 
 from .forms import StatisticsFiltersForm
-from .models import MediaFile, Directory, MediaFileLog, UserSettings
+from .models import (
+    MediaFile, Directory, MediaFileLog, UserSettings, SubtitlesFile
+)
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
     can_access_mediafile, get_subtitles_from_request, plot_query,
@@ -89,6 +91,8 @@ class MediaFilesView(LoginRequiredMixin, TemplateView):
         mediafiles = []
         for mf in mfs:
             mf.subdirectory = mf.directory[len(d.path) + 1:]
+            mf.subtitles_langs = ', '.join([
+                s.language for s in mf.subtitles.all()])
             mediafiles.append(mf)
             mfls = MediaFileLog.objects.filter(
                 mediafile=mf, user=request.user, last_position__isnull=False
@@ -115,16 +119,7 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
     template_name = "djmediastreamer/watch.html"
 
     def lookfor_subtitles(self, mediafile):
-        files = os.listdir(mediafile.directory)
-        subtitles = []
-        for f in files:
-            split = f.split('.')
-            ext = split[-1].lower()
-            if ext in ['srt', 'ass'] and (
-                '.'.join(mediafile.file_name.split('.')[:-1]) in f
-            ):
-                subtitles.append(f)
-        return subtitles
+        return mediafile.subtitles.all()
 
     def get(self, request, id, *args, **kwargs):
         context = {}
@@ -161,10 +156,11 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         subtitles_avail = self.lookfor_subtitles(mf)
         subtitles = []
         for s in subtitles_avail:
+            sub_text = '{id} {l}'.format(id=s.id, l=s.language)
             if s in selected_subs:
-                subtitles.append({'file': s, 'checked': 'checked'})
+                subtitles.append({'file': sub_text, 'checked': 'checked'})
             else:
-                subtitles.append({'file': s, 'checked': ''})
+                subtitles.append({'file': sub_text, 'checked': ''})
         context['subtitles'] = subtitles
         context['goto'] = goto or '00:00:00'
         for d in get_allowed_directories(request.user):
@@ -209,22 +205,26 @@ class GethMediaFileView(LoginRequiredMixin, View):
 
     def prepare_subtitles(self, s, offset=None):
         res = s
-        output = subprocess.check_output(['file', s])
+        if s.is_internal:
+            print 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaa' #DELETE
+            # TODO: extract mkv subtitle
+            pass
+        else:
+            subtitle_path = os.path.join(s.directory, s.file_name)
+        output = subprocess.check_output(['file', subtitle_path])
         cmd = None
-        split = s.split('.')
-        n = '.'.join(split[:-1])
-        new_name = '{n}.UTF8.{ext}'.format(n=n, ext=split[-1])
+        new_name = '{id}.utf8.{ext}'.format(id=s.id, ext=s.extension)
         if 'ISO-8859' in output or 'Non-ISO extended-ASCII' in output:
             cmd = 'iconv --from-code=ISO-8859-1 --to-code=UTF-8 "{s}" > "{n}"'\
-                .format(s=s, n=new_name)
+                .format(s=subtitle_path, n=new_name)
         elif 'ASCII' in output:
             cmd = 'iconv --from-code=ASCII --to-code=UTF-8 "{s}" > "{n}"'\
-                .format(s=s, n=new_name)
+                .format(s=subtitle_path, n=new_name)
         if cmd:
             os.system(cmd)
             res = new_name
         if offset:
-            split = res.split('.')
+            split = new_name.split('.')
             n = '.'.join(split[:-1])
             new_name = '{n}.ss.{ext}'.format(n=n, ext=split[-1])
             cmd = 'ffmpeg -i {res} -ss {offset} -f {ext} -y {nn}'.format(
@@ -232,7 +232,6 @@ class GethMediaFileView(LoginRequiredMixin, View):
             )
             os.system(cmd)
             res = new_name
-
         return res
 
     def transcode_process(
@@ -258,17 +257,19 @@ class GethMediaFileView(LoginRequiredMixin, View):
         if goto:
             cmd.insert(1, '-ss')
             cmd.insert(2, goto)
+        prepared_subtitles = []
         if subtitles:
-            for i in range(len(subtitles)):
-                subtitles[i] = self.prepare_subtitles(subtitles[i], goto)
-            if len(subtitles) == 1:
-                cmd.extend(['-vf', 'subtitles={s}'.format(s=subtitles[0])])
+            for i, s in enumerate(subtitles):
+                prepared_subtitles.append(self.prepare_subtitles(s, goto))
+            if len(prepared_subtitles) == 1:
+                cmd.extend(['-vf', 'subtitles={s}'.format(
+                    s=prepared_subtitles[0])])
             else:
                 subs_out = '.'.join(full_path.split('.')[:-1]) + '__.ass'
-                subtitles_cmd = 'ffmpeg -i "{s1}" -f ass - | ./manage.py move_subs_to_top > "{out}"'.format(s1=subtitles[1], out=subs_out)  # noqa
+                subtitles_cmd = 'ffmpeg -i "{s1}" -f ass - | ./manage.py move_subs_to_top > "{out}"'.format(s1=prepared_subtitles[1], out=subs_out)  # noqa
                 os.system(subtitles_cmd)
                 cmd.extend(['-vf', 'subtitles={s0},ass={s1}'.format(
-                    s0=subtitles[0], s1=subs_out)]
+                    s0=prepared_subtitles[0], s1=subs_out)]
                 )
         cmd.extend(extend)
         p = subprocess.Popen(
@@ -276,26 +277,11 @@ class GethMediaFileView(LoginRequiredMixin, View):
         )
         return p
 
-    def get_subtitles_files(self, mediafile):
-        # TODO: return all subtitles, not only one
-        if mediafile.extension == 'mkv':
-            mi = MediaInfo(mediafile.full_path)
-            index = mi.get_mkv_subtitles_index()
-            if index is not None:
-                return [mi.extract_mkv_subtitles(mediafile.id, index)]
-        return []
-
     def get(self, request, id, *args, **kwargs):
         mf = get_object_or_404(MediaFile, id=id)
         if not can_access_mediafile(request.user, mf):
             return HttpResponseForbidden()
         subtitles, _ = get_subtitles_from_request(request)
-        if subtitles:
-            # max two subtitles
-            subtitles = [os.path.join(mf.directory, s) for s in subtitles[:2]]
-        else:
-            subtitles = self.get_subtitles_files(mf)
-
         goto = request.GET.get('goto')
         if goto and goto.endswith('%'):
             seconds = str_duration_to_seconds(goto, mf)
@@ -366,6 +352,10 @@ class CollectDirectoryView(LoginRequiredMixin, View):
             with_mediainfo=True,
             directory=d.path,
             remove_missing=True
+        )
+        management.call_command(
+            'collect_subtitles',
+            directory=d.path,
         )
         return HttpResponseRedirect(reverse('directories'))
 

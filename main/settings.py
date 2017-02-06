@@ -132,6 +132,8 @@ VIDEO_EXTENSIONS = [
     '3gp', 'divx', 'ogv', 'wmv', 'mov', 'flv', 'rm', 'ts'
 ]
 
+SUBTITLE_EXTENSIONS = ['srt', 'mkv']
+
 AUDIO_EXTENSIONS = ['mp3']
 
 # TODO: change to 'sendfile.backends.nginx` in production
