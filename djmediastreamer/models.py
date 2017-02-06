@@ -111,7 +111,7 @@ class SubtitlesFile(models.Model):
 
 class SubtitlesLine(models.Model):
     subtitlefile = models.ForeignKey(SubtitlesFile)
-    index = models.IntegerField(db_index=True)
+    index = models.IntegerField(db_index=True, null=True, blank=True)
     start = models.TimeField(db_index=True)
     end = models.TimeField(db_index=True)
     text = models.TextField()
