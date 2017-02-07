@@ -6,6 +6,7 @@ import pysrt
 import enzyme
 from django.conf import settings
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.contrib.postgres.search import SearchVector
 
@@ -42,20 +43,20 @@ class Command(BaseCommand):
         if not file_path:
             file_path = os.path.join(
                 subtitle_file.directory, subtitle_file.file_name)
-        with transaction.atomic():
-            try:
-                subs = pysrt.open(file_path)
-            except UnicodeDecodeError:
-                subs = pysrt.open(
-                    file_path,
-                    encoding='iso-8859-1')
+        try:
+            subs = pysrt.open(file_path)
+        except UnicodeDecodeError:
+            subs = pysrt.open(
+                file_path,
+                encoding='iso-8859-1')
 
-            for sub in subs:
-                start = str(datetime.timedelta(
-                    milliseconds=sub.start.ordinal))
-                end = str(datetime.timedelta(
-                    milliseconds=sub.end.ordinal))
-                text = sub.text
+        for sub in subs:
+            start = str(datetime.timedelta(
+                milliseconds=sub.start.ordinal))
+            end = str(datetime.timedelta(
+                milliseconds=sub.end.ordinal))
+            text = sub.text
+            try:
                 line = SubtitlesLine.objects.create(
                     subtitlefile=subtitle_file,
                     index=sub.index,
@@ -63,9 +64,13 @@ class Command(BaseCommand):
                     end=str(end),
                     text=text,
                 )
-                line.text_vector = SearchVector('text',
-                                                config=subtitle_file.language)
-                line.save()
+            except (ValidationError, ValueError) as e:
+                print 'Ignoring: {t}'.format(t=text.encode('utf8'))
+                continue
+
+            line.text_vector = SearchVector(
+                'text', config=subtitle_file.language)
+            line.save()
 
     def collect_srt(self, directory, file_name):
         # use postgresql "simple" directory if it can't be guessed
