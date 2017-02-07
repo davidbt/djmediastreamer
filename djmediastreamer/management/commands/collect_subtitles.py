@@ -15,16 +15,6 @@ from djmediastreamer.models import (MediaFile, Directory, SubtitlesFile,
 
 
 class Command(BaseCommand):
-    languages = {
-        'spa': 'spanish',
-        'esp': 'spanish',
-        'eng': 'english',
-        'ger': 'german',
-        'fre': 'french',
-        'por': 'portuguese',
-        'ita': 'italian',
-    }
-
     def add_arguments(self, parser):
         parser.add_argument(
             '--directory',
@@ -36,7 +26,7 @@ class Command(BaseCommand):
 
     def guess_language(self, file_name):
         lang_key = file_name.lower().split('.')[-2]
-        lang = self.languages.get(lang_key)
+        lang = settings.LANGUAGES.get(lang_key)
         return lang
 
     def collect_subtitles_lines(self, subtitle_file, file_path=None):

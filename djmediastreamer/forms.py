@@ -1,7 +1,12 @@
 from django import forms
+from django.conf import settings
 
 from .models import Directory
 from .utils import get_extensions, get_video_codecs
+
+
+def get_languages():
+    return [(v, v) for v in set(settings.LANGUAGES.values())]
 
 
 class StatisticsFiltersForm(forms.Form):
@@ -22,3 +27,8 @@ class StatisticsFiltersForm(forms.Form):
         required=False,
         choices=[('count', 'Count'), ('size', 'Size (Gb)')],
     )
+
+
+class SearchSubtitlesForm(forms.Form):
+    query = forms.CharField()
+    language = forms.ChoiceField(choices=get_languages)

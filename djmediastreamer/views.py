@@ -1,8 +1,10 @@
 import os
 import time
+import datetime
 import subprocess
 from collections import OrderedDict
 
+import enzyme
 from sendfile import sendfile
 from django.db.models import Q
 from django.conf import settings
@@ -10,6 +12,7 @@ from django.core import management
 from django.core.urlresolvers import reverse
 from django.views.generic import TemplateView, View
 from django.shortcuts import render, get_object_or_404
+from django.contrib.postgres.search import SearchQuery
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login, logout, authenticate
 from django.http import (
@@ -18,9 +21,10 @@ from django.http import (
 )
 
 
-from .forms import StatisticsFiltersForm
+from .forms import StatisticsFiltersForm, SearchSubtitlesForm
 from .models import (
-    MediaFile, Directory, MediaFileLog, UserSettings, SubtitlesFile
+    MediaFile, Directory, MediaFileLog, UserSettings, SubtitlesFile,
+    SubtitlesLine
 )
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
@@ -204,16 +208,28 @@ class GethMediaFileView(LoginRequiredMixin, View):
     redirect_field_name = 'next'
 
     def prepare_subtitles(self, s, offset=None):
-        res = s
         if s.is_internal:
-            print 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaa' #DELETE
-            # TODO: extract mkv subtitle
-            pass
+            full_path = os.path.join(s.directory, s.file_name)
+            with open(full_path, 'rb') as fd:
+                mkv = enzyme.MKV(fd)
+                # TODO: check which track number instead of iterate
+                for sub_track in mkv.subtitle_tracks:
+                    sub_track = mkv.subtitle_tracks[0]
+                    if sub_track.codec_id == 'S_TEXT/UTF8':
+                        new_file = 'subtitle_{id}.srt'.format(id=s.id)
+                        cmd = ['mkvextract', 'tracks', full_path,
+                               '{n}:{e}'.format(
+                                n=sub_track.number - 1, e=new_file)]
+                        subprocess.check_output(cmd)
+                        subtitle_path = new_file
+                        break
         else:
             subtitle_path = os.path.join(s.directory, s.file_name)
+        res = subtitle_path
         output = subprocess.check_output(['file', subtitle_path])
         cmd = None
-        new_name = '{id}.utf8.{ext}'.format(id=s.id, ext=s.extension)
+        extension = s.extension if s.extension != 'mkv' else 'srt'
+        new_name = '{id}.utf8.{ext}'.format(id=s.id, ext=extension)
         if 'ISO-8859' in output or 'Non-ISO extended-ASCII' in output:
             cmd = 'iconv --from-code=ISO-8859-1 --to-code=UTF-8 "{s}" > "{n}"'\
                 .format(s=subtitle_path, n=new_name)
@@ -227,7 +243,7 @@ class GethMediaFileView(LoginRequiredMixin, View):
             split = new_name.split('.')
             n = '.'.join(split[:-1])
             new_name = '{n}.ss.{ext}'.format(n=n, ext=split[-1])
-            cmd = 'ffmpeg -i {res} -ss {offset} -f {ext} -y {nn}'.format(
+            cmd = 'ffmpeg -i "{res}" -ss {offset} -f {ext} -y "{nn}"'.format(
                 res=res, offset=offset, ext=split[-1], nn=new_name
             )
             os.system(cmd)
@@ -641,4 +657,45 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
             )
         context['charts'] = charts
         context['form'] = form
+        return render(request, self.template_name, context)
+
+
+class SubtitlesView(LoginRequiredMixin, TemplateView):
+    template_name = "djmediastreamer/subtitles.html"
+
+    def get(self, request, *args, **kwargs):
+        sub_lines_lst = []
+        if 'language' in request.GET:
+            form = SearchSubtitlesForm(request.GET)
+            if form.is_valid():
+                lang = form.cleaned_data['language']
+                user_query = form.cleaned_data['query']
+
+                sub_lines = SubtitlesLine.objects.select_related(
+                    'subtitlefile').extra(
+                        where=["""(language = %s AND
+                                plainto_tsquery(%s::regconfig, %s) @@ text_vector)
+                            OR (language = 'simple' AND
+                                plainto_tsquery('simple'::regconfig, %s) @@ text_vector)"""],  # noqa
+                        params=[lang, lang, user_query, user_query]
+                    )
+                for line in sub_lines:
+                    new_start = datetime.datetime.combine(
+                        datetime.date.today(), line.start) - \
+                            datetime.timedelta(seconds=5)
+                    if new_start.date() != datetime.date.today():
+                        new_start = datetime.date.today().strftime('%H:%M:%S')
+                    else:
+                        new_start = new_start.strftime('%H:%M:%S')
+                    if line.subtitlefile.mediafile:
+                        line.watch_url = '{w}?goto={f}&sub_0={id}+{lang}'. \
+                            format(
+                                w=line.subtitlefile.mediafile.watch_url,
+                                f=new_start,
+                                id=line.subtitlefile.id,
+                                lang=line.subtitlefile.language)
+                    sub_lines_lst.append(line)
+        else:
+            form = SearchSubtitlesForm()
+        context = {'form': form, 'sub_lines': sub_lines_lst}
         return render(request, self.template_name, context)

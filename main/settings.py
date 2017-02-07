@@ -25,7 +25,7 @@ SECRET_KEY = 'ghp43h2_qio4k3u6^@%osco$4j2mch!*jwv6=3vmi#yd4a&0g@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -140,3 +140,14 @@ AUDIO_EXTENSIONS = ['mp3']
 SENDFILE_BACKEND = 'sendfile.backends.simple'
 
 DEFAULT_VP8_CRF = 24
+
+# languages abbreviations
+LANGUAGES = {
+    'spa': 'spanish',
+    'esp': 'spanish',
+    'eng': 'english',
+    'ger': 'german',
+    'fre': 'french',
+    'por': 'portuguese',
+    'ita': 'italian',
+}

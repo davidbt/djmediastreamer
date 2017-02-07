@@ -1,0 +1,62 @@
+{% extends 'djmediastreamer/base.html' %}
+{% load static %}
+
+{% block extra_head %}
+  <script src='{% static "node_modules/datatables/media/js/jquery.dataTables.min.js" %}'></script>
+  <script src='{% static "djmediastreamer/js/mediafiles.js" %}'></script>
+  <link href='{% static "node_modules/datatables/media/css/jquery.dataTables.min.css" %}' rel="stylesheet">
+{% endblock extra_head %}
+
+{% block content %}
+<div class="row chart-row">
+  <div class="col-sm-12">
+    <div class="panel panel-default">
+      <div class="panel-heading"></div>
+        <br>
+        <form id="subtitles-form" method="get">
+          {{ form }}
+          <input id="subtitles-form-submit" type="submit" value="Query" />
+        </form>
+      <div class="panel-body">
+      </div>
+  </div>
+</div>
+
+  <br><br>
+  <table id="mediafiles" class="display" width="100%" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Line</th>
+        <th>Language</th>
+        <th>Directory</th>
+        <th>File</th>
+        <th>Time</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in sub_lines %}
+      <tr>
+        <td>
+          {{line.text}}
+        </td>
+        <td>
+          {{line.subtitlefile.language}}
+        </td>
+        <td>
+          {{line.subtitlefile.directory}}
+        </td>
+        <td>
+          {{line.subtitlefile.file_name}}
+        </td>
+        <td>
+          {{line.start|time:'H:i:s'}}
+        </td>
+        <td>
+          <a href="{{line.watch_url}}" >Watch</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock content %}
