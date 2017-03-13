@@ -110,9 +110,29 @@ class SubtitlesFile(models.Model):
 
 
 class SubtitlesLine(models.Model):
-    subtitlefile = models.ForeignKey(SubtitlesFile)
+    subtitlefile = models.ForeignKey(SubtitlesFile, related_name='lines')
     index = models.IntegerField(db_index=True, null=True, blank=True)
     start = models.TimeField(db_index=True)
     end = models.TimeField(db_index=True)
     text = models.TextField()
     text_vector = TsVectorField(null=True, blank=True)
+
+    def _str_time(self, tmp):
+        s = str(tmp)
+        if '.' in s:
+            split = s.split('.')
+            end = split[-1]
+            while end.endswith('0') and len(end) > 3:
+                end = end[:-1]
+            res = '.'.join(split[:-1]) + ',' + end
+
+            return res
+        return s
+
+    @property
+    def str_start(self):
+        return self._str_time(self.start)
+
+    @property
+    def str_end(self):
+        return self._str_time(self.end)
