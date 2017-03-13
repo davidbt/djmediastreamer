@@ -117,7 +117,11 @@ class SubtitlesLine(models.Model):
     text = models.TextField()
     text_vector = TsVectorField(null=True, blank=True)
 
-    def _str_time(self, tmp):
+    def time_to_secods(self, time):
+        return time.hour * 3600 + time.minute * 60 + time.second + \
+            time.microsecond * 0.000001
+
+    def str_time(self, tmp):
         s = str(tmp)
         if '.' in s:
             split = s.split('.')
@@ -131,8 +135,16 @@ class SubtitlesLine(models.Model):
 
     @property
     def str_start(self):
-        return self._str_time(self.start)
+        return self.str_time(self.start)
 
     @property
     def str_end(self):
-        return self._str_time(self.end)
+        return self.str_time(self.end)
+
+    @property
+    def start_in_seconds(self):
+        return self.time_to_secods(self.start)
+
+    @property
+    def end_in_seconds(self):
+        return self.time_to_secods(self.end)
