@@ -10,20 +10,17 @@ from djmediastreamer.models import SubtitlesFile
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
-            '--id',
-            required=True,
+            'id',
             type=int,
             help='Id of subtitle object to export.'
         )
         parser.add_argument(
-            '--output-file',
-            required=True,
+            'output-file',
             type=str,
             help='Output file path.'
         )
         parser.add_argument(
-            '--keep-subtitles',
-            required=False,
+            'keep-subtitles',
             type=bool,
             default=False,
             help='Keeps the text in the screen for more time when is possible.'
@@ -32,8 +29,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         sub_file = SubtitlesFile.objects.get(id=options['id'])
         lines = [l for l in sub_file.lines.order_by('start')]
-        keep = options['keep_subtitles']
-        with codecs.open(options['output_file'], 'w', 'utf-8') as desc:
+        keep = options['keep-subtitles']
+        with codecs.open(options['output-file'], 'w', 'utf-8') as desc:
             for i, line in enumerate(lines):
                 end = line.end
 

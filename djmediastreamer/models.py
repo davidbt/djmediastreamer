@@ -131,7 +131,8 @@ class SubtitlesLine(models.Model):
             res = '.'.join(split[:-1]) + ',' + end
 
             return res
-        return s
+        else:
+            return s + ',000'
 
     @property
     def str_start(self):

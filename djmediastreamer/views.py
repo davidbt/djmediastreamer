@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.conf import settings
 from django.core import management
 from django.core.urlresolvers import reverse
+from django.core.management import call_command
 from django.views.generic import TemplateView, View
 from django.shortcuts import render, get_object_or_404
 from django.contrib.postgres.search import SearchQuery
@@ -207,8 +208,8 @@ class GethMediaFileView(LoginRequiredMixin, View):
     login_url = '/login/'
     redirect_field_name = 'next'
 
-    def prepare_subtitles(self, s, offset=None):
-        if s.is_internal:
+    def prepare_subtitles(self, s, offset=None, keep_on_screen=False):
+        if s.is_internal and not keep_on_screen:
             full_path = os.path.join(s.directory, s.file_name)
             with open(full_path, 'rb') as fd:
                 mkv = enzyme.MKV(fd)
@@ -223,8 +224,11 @@ class GethMediaFileView(LoginRequiredMixin, View):
                         subprocess.check_output(cmd)
                         subtitle_path = new_file
                         break
-        else:
+        if not s.is_internal:
             subtitle_path = os.path.join(s.directory, s.file_name)
+        if keep_on_screen:
+            subtitle_path = '{id}_keep.srt'.format(id=s.id)
+            call_command('export_subtitles', s.id, subtitle_path, True)
         res = subtitle_path
         output = subprocess.check_output(['file', subtitle_path])
         cmd = None
@@ -275,8 +279,10 @@ class GethMediaFileView(LoginRequiredMixin, View):
             cmd.insert(2, goto)
         prepared_subtitles = []
         if subtitles:
+            keep_on_screen = len(subtitles) > 1
             for i, s in enumerate(subtitles):
-                prepared_subtitles.append(self.prepare_subtitles(s, goto))
+                prepared_subtitles.append(
+                    self.prepare_subtitles(s, goto, keep_on_screen))
             if len(prepared_subtitles) == 1:
                 cmd.extend(['-vf', 'subtitles={s}'.format(
                     s=prepared_subtitles[0])])
