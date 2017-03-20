@@ -1,0 +1,13 @@
+Description=Backgroud tasks executer for djmediastreamer.
+[Unit]
+After=network.target
+
+[Service]
+PIDFile=/run/djmediastreamer_backgroup_tasks.pid
+ExecStart=/bin/bash -c "cd YOUR_PROJECT_PATH && source YOUR_ENV_PATH/bin/activate && YOUR_PROJECT_PATH/manage.py process_tasks"
+Type=forking
+Restart=on-failure
+ExecStop=/bin/bash -c "/bin/kill -9 `/bin/cat /run/djmediastreamer_backgroup_tasks.pid`"
+
+[Install]
+WantedBy=multi-user.target
