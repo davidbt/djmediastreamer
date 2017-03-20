@@ -146,8 +146,11 @@ DEFAULT_VP8_CRF = 22
 LANGUAGES = {
     'spa': 'spanish',
     'esp': 'spanish',
+    'es': 'spanish',
     'eng': 'english',
+    'en': 'english',
     'ger': 'german',
+    'de': 'german',
     'fre': 'french',
     'por': 'portuguese',
     'ita': 'italian',
