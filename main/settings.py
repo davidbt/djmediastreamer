@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_nvd3',
+    'background_task',
     'djmediastreamer',
 ]
 
@@ -139,7 +140,7 @@ AUDIO_EXTENSIONS = ['mp3']
 # TODO: change to 'sendfile.backends.nginx` in production
 SENDFILE_BACKEND = 'sendfile.backends.simple'
 
-DEFAULT_VP8_CRF = 24
+DEFAULT_VP8_CRF = 22
 
 # languages abbreviations
 LANGUAGES = {

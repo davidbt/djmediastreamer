@@ -5,3 +5,4 @@ uwsgi
 django-nvd3
 pysrt
 enzyme
+django-background-tasks

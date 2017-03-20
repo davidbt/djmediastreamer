@@ -9,6 +9,7 @@ from sendfile import sendfile
 from django.db.models import Q
 from django.conf import settings
 from django.core import management
+from background_task import background
 from django.core.urlresolvers import reverse
 from django.core.management import call_command
 from django.views.generic import TemplateView, View
@@ -142,11 +143,14 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         selected_subs, url_append = get_subtitles_from_request(request)
         mf.url += url_append
         mf.transcoded_url = mf.url
+        mf.generate_transcoded_url = mf.url
         trnscoded_append = 'download=true'
         if '?' in mf.transcoded_url:
             mf.transcoded_url += '&' + trnscoded_append
+            mf.generate_transcoded_url += '&' + 'generate_file=true'
         else:
             mf.transcoded_url += '?' + trnscoded_append
+            mf.generate_transcoded_url += '?' + 'generate_file=true'
         mf.video_type = 'video/webm'
 
         if mf.extension == 'mp4' and mf.v_codec == 'AVC':
@@ -204,6 +208,22 @@ class WatchMediaFileView(LoginRequiredMixin, TemplateView):
         return JsonResponse({'progress': progress})
 
 
+def get_pipe(cmd):
+        return subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+
+
+@background(schedule=1)
+def transcode_to_file(full_path, subtitle_ids, goto):
+    split = full_path.split('.')
+    new_file = '.'.join(split[:-1]) + '_transcoded.' + split[-1]
+    subtitles = SubtitlesFile.objects.filter(id__in=subtitle_ids)
+    view = GethMediaFileView()
+    cmd = view.get_transcode_cmd(full_path, subtitles, goto, 'matroska', output_file=new_file)
+    subprocess.call(cmd)
+
+
 class GethMediaFileView(LoginRequiredMixin, View):
     login_url = '/login/'
     redirect_field_name = 'next'
@@ -254,10 +274,10 @@ class GethMediaFileView(LoginRequiredMixin, View):
             res = new_name
         return res
 
-    def transcode_process(
-        self, full_path, subtitles=None, goto=None, output_format='webm',
-        width=None, height=None, vp8_crf=24
-    ):
+
+    def get_transcode_cmd(self, full_path, subtitles=None, goto=None,
+                          output_format='webm', width=None, height=None,
+                          vp8_crf=24, output_file='-'):
         if output_format == 'webm':
             cmd = ['ffmpeg', '-i', full_path]
             if width:
@@ -267,13 +287,13 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 '-threads', '8', '-speed', '4'
             ])
 
-            extend = ['-f', 'webm', '-']
+            extend = ['-f', 'webm', output_file]
         elif output_format == 'matroska':
             cmd = [
                 'ffmpeg', '-i', full_path,
-                '-crf', '20'
+                '-crf', '18'
             ]
-            extend = ['-f', 'matroska', '-']
+            extend = ['-f', 'matroska', output_file]
         if goto:
             cmd.insert(1, '-ss')
             cmd.insert(2, goto)
@@ -294,10 +314,15 @@ class GethMediaFileView(LoginRequiredMixin, View):
                     s0=prepared_subtitles[0], s1=subs_out)]
                 )
         cmd.extend(extend)
-        p = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        return p
+        return cmd
+        return get_pipe(cmd)
+
+    def transcode_process(self, full_path, subtitles=None, goto=None,
+                          output_format='webm', width=None, height=None,
+                          vp8_crf=24):
+        return get_pipe(self.get_transcode_cmd(full_path, subtitles, goto,
+                                               output_format, width, height,
+                                               vp8_crf))
 
     def get(self, request, id, *args, **kwargs):
         mf = get_object_or_404(MediaFile, id=id)
@@ -333,6 +358,12 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 vp8_crf = request.user.settings.vp8_crf or (
                     settings.DEFAULT_VP8_CRF
                 )
+            if request.GET.get('generate_file') == 'true':
+                # TODO: use the background task
+                transcode_to_file(full_path=mf.full_path,
+                                  subtitle_ids=[s.id for s in subtitles],
+                                  goto=goto)
+                return HttpResponseRedirect(reverse('directories'))
             res = StreamingHttpResponse(
                 self.transcode_process(
                     mf.full_path, subtitles, goto, output_format, width,
