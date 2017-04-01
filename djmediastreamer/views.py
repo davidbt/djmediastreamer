@@ -26,7 +26,7 @@ from django.http import (
 from .forms import StatisticsFiltersForm, SearchSubtitlesForm
 from .models import (
     MediaFile, Directory, MediaFileLog, UserSettings, SubtitlesFile,
-    SubtitlesLine
+    SubtitlesLine, TranscodeLog
 )
 from .utils import (
     MediaInfo, get_allowed_directories, can_access_directory,
@@ -215,13 +215,17 @@ def get_pipe(cmd):
 
 
 @background(schedule=1)
-def transcode_to_file(full_path, subtitle_ids, goto):
+def transcode_to_file(full_path, subtitle_ids, goto, user_id, mediafile_id):
     split = full_path.split('.')
     new_file = '.'.join(split[:-1]) + '_transcoded.' + split[-1]
     subtitles = SubtitlesFile.objects.filter(id__in=subtitle_ids)
     view = GethMediaFileView()
     cmd = view.get_transcode_cmd(full_path, subtitles, goto, 'matroska', output_file=new_file)
+    TranscodeLog.objects.create(mediafile_id=mediafile_id,
+                                user_id=user_id,
+                                command=cmd)
     subprocess.call(cmd)
+
 
 
 class GethMediaFileView(LoginRequiredMixin, View):
@@ -362,7 +366,8 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 # TODO: use the background task
                 transcode_to_file(full_path=mf.full_path,
                                   subtitle_ids=[s.id for s in subtitles],
-                                  goto=goto)
+                                  goto=goto, user_id=request.user.id,
+                                  mediafile_id=mf.id)
                 return HttpResponseRedirect(reverse('directories'))
             res = StreamingHttpResponse(
                 self.transcode_process(

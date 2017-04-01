@@ -149,3 +149,10 @@ class SubtitlesLine(models.Model):
     @property
     def end_in_seconds(self):
         return self.time_to_secods(self.end)
+
+
+class TranscodeLog(models.Model):
+    mediafile = models.ForeignKey(MediaFile)
+    user = models.ForeignKey(User)
+    dtm = models.DateTimeField(auto_now=True)
+    command = models.TextField()
