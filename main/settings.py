@@ -154,4 +154,5 @@ LANGUAGES = {
     'fre': 'french',
     'por': 'portuguese',
     'ita': 'italian',
+    'it': 'italian',
 }
