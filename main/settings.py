@@ -156,3 +156,5 @@ LANGUAGES = {
     'ita': 'italian',
     'it': 'italian',
 }
+
+VIRTUAL_ENV_PATH = None

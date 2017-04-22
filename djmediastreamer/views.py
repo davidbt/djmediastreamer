@@ -214,18 +214,29 @@ def get_pipe(cmd):
         )
 
 
+def get_str_cmd(cmd_lst):
+    """Returns a string with the command to execute"""
+    params = []
+    for param in cmd_lst:
+        if len(param) > 12:
+            params.append('"{p}"'.format(p=param))
+        else:
+            params.append(param)
+    return ' '.join(params)
+
+
 @background(schedule=1)
 def transcode_to_file(full_path, subtitle_ids, goto, user_id, mediafile_id):
     split = full_path.split('.')
     new_file = '.'.join(split[:-1]) + '_transcoded.' + split[-1]
     subtitles = SubtitlesFile.objects.filter(id__in=subtitle_ids)
     view = GethMediaFileView()
-    cmd = view.get_transcode_cmd(full_path, subtitles, goto, 'matroska', output_file=new_file)
+    cmd = view.get_transcode_cmd(full_path, subtitles, goto, 'matroska',
+                                 output_file=new_file)
     TranscodeLog.objects.create(mediafile_id=mediafile_id,
                                 user_id=user_id,
-                                command=cmd)
+                                command=get_str_cmd(cmd))
     subprocess.call(cmd)
-
 
 
 class GethMediaFileView(LoginRequiredMixin, View):
@@ -291,11 +302,11 @@ class GethMediaFileView(LoginRequiredMixin, View):
                 '-threads', '8', '-speed', '4'
             ])
 
-            extend = ['-f', 'webm', output_file]
+            extend = ['-y', '-f', 'webm', output_file]
         elif output_format == 'matroska':
             cmd = [
                 'ffmpeg', '-i', full_path,
-                '-crf', '18'
+                '-crf', '18', '-y'
             ]
             extend = ['-f', 'matroska', output_file]
         if goto:
@@ -312,14 +323,19 @@ class GethMediaFileView(LoginRequiredMixin, View):
                     s=prepared_subtitles[0])])
             else:
                 subs_out = '.'.join(full_path.split('.')[:-1]) + '__.ass'
-                subtitles_cmd = 'ffmpeg -i "{s1}" -f ass - | ./manage.py move_subs_to_top > "{out}"'.format(s1=prepared_subtitles[1], out=subs_out)  # noqa
+                venv_cmd = ''
+                if settings.VIRTUAL_ENV_PATH:
+                    venv_cmd = 'source {path}/bin/activate;'.format(
+                        path=settings.VIRTUAL_ENV_PATH)
+                subtitles_cmd = '{venv_cmd} ffmpeg -i "{s1}" -f ass - | ./manage.py move_subs_to_top > "{out}"'.format(
+                    venv_cmd=venv_cmd, s1=prepared_subtitles[1], out=subs_out)
+                subtitles_cmd = 'bash -c "{cmd}"'.format(cmd=subtitles_cmd.replace('"', r'\"'))
                 os.system(subtitles_cmd)
                 cmd.extend(['-vf', 'subtitles={s0},ass={s1}'.format(
                     s0=prepared_subtitles[0], s1=subs_out)]
                 )
         cmd.extend(extend)
         return cmd
-        return get_pipe(cmd)
 
     def transcode_process(self, full_path, subtitles=None, goto=None,
                           output_format='webm', width=None, height=None,
