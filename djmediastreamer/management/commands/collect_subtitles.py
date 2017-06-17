@@ -23,6 +23,12 @@ class Command(BaseCommand):
             type=str,
             help='The directory path to scan.'
         )
+        parser.add_argument(
+            '--limit',
+            dest='limit',
+            default=5,
+            help='Max number of files to collect.',  # noqa
+        )
 
     def guess_language(self, file_name):
         lang_key = file_name.lower().split('.')[-2]
@@ -131,6 +137,8 @@ class Command(BaseCommand):
             self.collect_mkv(directory, file_name)
 
     def handle(self, *args, **options):
+        count = 0
+        limit = options.get('directory')
         ignore_directories = Directory.objects.filter(ignore=True)
         directory = str(options.get('directory'))
         walk = os.walk(directory)
@@ -147,3 +155,6 @@ class Command(BaseCommand):
                 for ext in settings.SUBTITLE_EXTENSIONS:
                     if f.lower().endswith('.{ext}'.format(ext=ext)):
                         self.collect_subfile(d, f)
+                        count += 1
+                if count == limit:
+                    break

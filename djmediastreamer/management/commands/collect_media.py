@@ -39,11 +39,19 @@ class Command(BaseCommand):
             default=False,
             help='Removes MediaFiles from the DB associated with files that no longer exists in the selected directory.',  # noqa
         )
+        parser.add_argument(
+            '--limit',
+            dest='limit',
+            default=1000,
+            help='Max number of files to collect.',  # noqa
+        )
 
     def handle(self, *args, **options):
+        count = 0
         ignore_directories = Directory.objects.filter(ignore=True)
         lines = sys.stdin
         directory = str(options.get('directory'))
+        limit = options.get('limit')
         if directory:
             lines = []
             walk = os.walk(directory)
@@ -64,6 +72,7 @@ class Command(BaseCommand):
                 continue
             for e in settings.VIDEO_EXTENSIONS:
                 if l.endswith('.' + e):
+                    count += 1
                     split = f.split('/')
                     n = split[-1]
                     path = '/'.join(split[:-1])
@@ -89,6 +98,8 @@ class Command(BaseCommand):
                         found = False
                         mf.save()
                     break
+            if count == limit:
+                break
 
         if options.get('remove_missing'):
             mediafiles = MediaFile.objects.all()
