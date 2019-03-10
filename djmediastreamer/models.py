@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 import time
 
 from django.db import models
+from django.urls import reverse
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
 from django.contrib.postgres.fields import JSONField
 
 from .fields import TsVectorField
@@ -75,8 +75,8 @@ class Directory(models.Model):
 
 
 class MediaFileLog(models.Model):
-    mediafile = models.ForeignKey(MediaFile)
-    user = models.ForeignKey(User)
+    mediafile = models.ForeignKey(MediaFile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     dtm = models.DateTimeField(auto_now=True)
     request = models.TextField()
     request_params = JSONField(null=True, blank=True)
@@ -86,7 +86,7 @@ class MediaFileLog(models.Model):
 
 
 class UserSettings(models.Model):
-    user = models.OneToOneField(User, related_name='settings')
+    user = models.OneToOneField(User, related_name='settings', on_delete=models.CASCADE)
     max_width = models.IntegerField(null=True, blank=True)
     # Constant Rate Factor. Lower means better quality
     vp8_crf = models.IntegerField(null=True, blank=True)
@@ -101,7 +101,8 @@ class SubtitlesFile(models.Model):
     directory = models.TextField()
     extension = models.CharField(max_length=5)
     mediafile = models.ForeignKey(MediaFile, null=True, blank=True,
-                                  related_name='subtitles')
+                                  related_name='subtitles',
+                                  on_delete=models.CASCADE)
     language = models.TextField(null=True, blank=True)
 
     @property
@@ -110,7 +111,7 @@ class SubtitlesFile(models.Model):
 
 
 class SubtitlesLine(models.Model):
-    subtitlefile = models.ForeignKey(SubtitlesFile, related_name='lines')
+    subtitlefile = models.ForeignKey(SubtitlesFile, related_name='lines', on_delete=models.CASCADE)
     index = models.IntegerField(db_index=True, null=True, blank=True)
     start = models.TimeField(db_index=True)
     end = models.TimeField(db_index=True)
@@ -152,7 +153,7 @@ class SubtitlesLine(models.Model):
 
 
 class TranscodeLog(models.Model):
-    mediafile = models.ForeignKey(MediaFile)
-    user = models.ForeignKey(User)
+    mediafile = models.ForeignKey(MediaFile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     dtm = models.DateTimeField(auto_now=True)
     command = models.TextField()

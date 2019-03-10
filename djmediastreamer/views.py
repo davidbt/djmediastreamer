@@ -7,10 +7,10 @@ from collections import OrderedDict
 import enzyme
 from sendfile import sendfile
 from django.db.models import Q
+from django.urls import reverse
 from django.conf import settings
 from django.core import management
 from background_task import background
-from django.core.urlresolvers import reverse
 from django.core.management import call_command
 from django.views.generic import TemplateView, View
 from django.shortcuts import render, get_object_or_404
